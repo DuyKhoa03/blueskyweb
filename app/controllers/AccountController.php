@@ -61,7 +61,7 @@ class AccountController
                 $result = $this->accountModel->save($username, $fullName, $password);
 
                 if ($result) {
-                    header('Location: /webbanhang/account/login');
+                    header('Location: /blueskyweb/account/login');
                 }
             }
         }
@@ -73,7 +73,7 @@ class AccountController
         unset($_SESSION['username']);
         unset($_SESSION['role']);
 
-        header('Location: /webbanhang/product');
+        header('Location: /blueskyweb/product');
     }
     public function checkLogin()
     {

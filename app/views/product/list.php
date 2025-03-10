@@ -23,36 +23,56 @@
                 'Authorization': 'Bearer ' + token
             }
         })
-            .then(response => response.json())
-            .then(data => {
-                const productList = document.getElementById('product-list');
-                data.forEach(product => {
-                    const productItem = document.createElement('li');
-                    productItem.className = 'list-group-item';
-                    productItem.innerHTML = ` 
-                    <h2><a href="/blueskyweb/Product/show/${product.id}">${product.name}</a></h2> 
-                    <p>${product.description}</p> 
-                    <p>Giá: ${product.price} VND</p> 
-                    <p>Danh mục: ${product.category_name}</p> 
-                    <a href="/blueskyweb/Product/edit/${product.id}" class="btn btn-warning">Sửa</a> 
-                    <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Xóa</button> 
-                `; productList.appendChild(productItem);
-                });
+        .then(response => response.json())
+        .then(data => {
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = ''; // Xóa danh sách cũ trước khi load mới
+            
+            data.forEach(product => {
+                const productItem = document.createElement('li');
+                productItem.className = 'list-group-item';
+                productItem.innerHTML = ` 
+                    <div class="d-flex align-items-center">
+                        <img src="${product.image}" alt="${product.name}" class="product-image mr-3">
+                        <div>
+                            <h2><a href="/blueskyweb/Product/show/${product.id}">${product.name}</a></h2> 
+                            <p>${product.description}</p> 
+                            <p>Giá: ${product.price} VND</p> 
+                            <p>Danh mục: ${product.category_name}</p> 
+                            <a href="/blueskyweb/Product/edit/${product.id}" class="btn btn-warning">Sửa</a> 
+                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Xóa</button> 
+                        </div>
+                    </div>
+                `; 
+                productList.appendChild(productItem);
             });
+        })
+        .catch(error => console.error("Lỗi khi tải danh sách sản phẩm:", error));
     });
+
     function deleteProduct(id) {
         if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
             fetch(`/blueskyweb/api/product/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message === 'Product deleted successfully') {
-                        location.reload();
-                    } else {
-                        alert('Xóa sản phẩm thất bại');
-                    }
-                });
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Product deleted successfully') {
+                    location.reload();
+                } else {
+                    alert('Xóa sản phẩm thất bại');
+                }
+            })
+            .catch(error => console.error("Lỗi khi xóa sản phẩm:", error));
         }
-    } 
+    }
 </script>
+
+<style>
+    .product-image {
+        max-width: 100px;
+        height: auto;
+        border-radius: 5px;
+    }
+</style>
