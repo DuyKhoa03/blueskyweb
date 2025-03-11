@@ -15,7 +15,7 @@ class ProductController
         include 'app/views/product/list.php';
     }
 
-    // Hiển thị thông tin sản phẩm
+    // Hiển thị thông tin sản phẩm nguyenkhanh changes
     public function show($id)
     {
         $product = $this->callApi('GET', "{$this->apiUrl}/$id");
