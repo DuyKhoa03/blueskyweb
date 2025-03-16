@@ -3,34 +3,38 @@ class ProductModel
 {
     private $conn;
     private $table_name = "product";
+
     public function __construct($db)
     {
         $this->conn = $db;
     }
+
+    // Lấy danh sách sản phẩm
     public function getProducts()
     {
-        $query = "SELECT p.id, p.name, p.description,  p.price, p.image, c.name as category_name 
-FROM " . $this->table_name . " p 
-LEFT JOIN category c ON p.category_id = c.id";
+        $query = "SELECT p.id, p.name, p.description, p.price, p.image, c.name as category_name 
+                  FROM " . $this->table_name . " p 
+                  LEFT JOIN category c ON p.category_id = c.id";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_OBJ);
-        return $result;
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
+    // Lấy thông tin sản phẩm theo ID
     public function getProductById($id)
     {
         $query = "SELECT * FROM " . $this->table_name . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_OBJ);
-        return $result;
+        return $stmt->fetch(PDO::FETCH_OBJ);
     }
 
-    public function addProduct($name, $description, $price, $category_id)
+    // Thêm sản phẩm mới
+    public function addProduct($name, $description, $price, $category_id, $imagePath)
     {
         $errors = [];
+
         if (empty($name)) {
             $errors['name'] = 'Tên sản phẩm không được để trống';
         }
@@ -40,65 +44,102 @@ LEFT JOIN category c ON p.category_id = c.id";
         if (!is_numeric($price) || $price < 0) {
             $errors['price'] = 'Giá sản phẩm không hợp lệ';
         }
-        if (count($errors) > 0) {
+        if (empty($imagePath)) {
+            $errors['image'] = 'Vui lòng tải lên hình ảnh sản phẩm';
+        }
+        if (!empty($errors)) {
             return $errors;
         }
 
-        $query = "INSERT INTO " . $this->table_name . " (name, description, price, 
-category_id) VALUES (:name, :description, :price, :category_id)";
+        // SQL query
+        $query = "INSERT INTO " . $this->table_name . " (name, description, price, image, category_id) 
+                  VALUES (:name, :description, :price, :image, :category_id)";
         $stmt = $this->conn->prepare($query);
 
+        // Làm sạch dữ liệu
         $name = htmlspecialchars(strip_tags($name));
         $description = htmlspecialchars(strip_tags($description));
         $price = htmlspecialchars(strip_tags($price));
         $category_id = htmlspecialchars(strip_tags($category_id));
 
-
+        // Gán dữ liệu vào câu lệnh SQL
         $stmt->bindParam(':name', $name);
         $stmt->bindParam(':description', $description);
         $stmt->bindParam(':price', $price);
+        $stmt->bindParam(':image', $imagePath);
         $stmt->bindParam(':category_id', $category_id);
 
-        if ($stmt->execute()) {
-            return true;
-        }
-
-        return false;
+        return $stmt->execute();
     }
 
-    public function updateProduct($id, $name, $description, $price, $category_id)
+    // Cập nhật sản phẩm
+    public function updateProduct($id, $name, $description, $price, $category_id, $newImagePath = null)
     {
-        $query = "UPDATE " . $this->table_name . " SET name=:name, 
-        description=:description, price=:price, category_id=:category_id WHERE id=:id";
+        // Lấy sản phẩm hiện tại
+        $currentProduct = $this->getProductById($id);
+        if (!$currentProduct) {
+            return false;
+        }
+
+        // Nếu có ảnh mới thì xóa ảnh cũ
+        if ($newImagePath && !empty($currentProduct->image)) {
+            $oldImagePath = __DIR__ . "/../../uploads/" . basename($currentProduct->image);
+            if (file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+        }
+
+        // SQL query
+        $query = "UPDATE " . $this->table_name . " SET name=:name, description=:description, price=:price, category_id=:category_id";
+        if ($newImagePath) {
+            $query .= ", image=:image";
+        }
+        $query .= " WHERE id=:id";
+
         $stmt = $this->conn->prepare($query);
 
+        // Làm sạch dữ liệu
         $name = htmlspecialchars(strip_tags($name));
         $description = htmlspecialchars(strip_tags($description));
         $price = htmlspecialchars(strip_tags($price));
         $category_id = htmlspecialchars(strip_tags($category_id));
 
-
-        $stmt->bindParam(':id', $id);
+        // Gán dữ liệu vào câu lệnh SQL
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->bindParam(':name', $name);
         $stmt->bindParam(':description', $description);
         $stmt->bindParam(':price', $price);
         $stmt->bindParam(':category_id', $category_id);
 
-        if ($stmt->execute()) {
-            return true;
+        if ($newImagePath) {
+            $stmt->bindParam(':image', $newImagePath);
         }
-        return false;
+
+        return $stmt->execute();
     }
 
+    // Xóa sản phẩm
     public function deleteProduct($id)
     {
+        // Lấy thông tin sản phẩm trước khi xóa
+        $product = $this->getProductById($id);
+        if (!$product) {
+            return false;
+        }
+
+        // Xóa ảnh sản phẩm nếu có
+        if (!empty($product->image)) {
+            $imagePath = __DIR__ . "/../../uploads/" . basename($product->image);
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
+        }
+
+        // Xóa sản phẩm khỏi database
         $query = "DELETE FROM " . $this->table_name . " WHERE id=:id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        if ($stmt->execute()) {
-            return true;
-        }
-        return false;
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 }
 ?>

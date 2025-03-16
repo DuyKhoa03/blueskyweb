@@ -46,12 +46,17 @@ class ProductController
 
             // Xử lý upload hình ảnh
             if (!empty($_FILES['image']['name'])) {
-                $data['image'] = $this->uploadImage($_FILES['image']);
+                try {
+                    $data['image'] = new CURLFile($this->uploadImage($_FILES['image']));
+                } catch (Exception $e) {
+                    echo "Lỗi upload ảnh: " . $e->getMessage();
+                    return;
+                }
             }
 
-            $response = $this->callApi('POST', $this->apiUrl, $data);
+            $response = $this->callApi('POST', $this->apiUrl, $data, true);
 
-            if ($response && isset($response->message) && $response->message === 'Product created successfully') {
+            if ($response && isset($response->message) && $response->message === 'Sản phẩm đã được tạo thành công') {
                 header('Location: /blueskyweb/Product');
                 exit();
             } else {
@@ -83,17 +88,22 @@ class ProductController
                 'description' => $_POST['description'] ?? '',
                 'price' => $_POST['price'] ?? '',
                 'category_id' => $_POST['category_id'] ?? null,
-                'image' => $_POST['existing_image'] ?? ''
+                'existing_image' => $_POST['existing_image'] ?? ''
             ];
 
             // Xử lý upload hình ảnh mới nếu có
             if (!empty($_FILES['image']['name'])) {
-                $data['image'] = $this->uploadImage($_FILES['image']);
+                try {
+                    $data['image'] = new CURLFile($this->uploadImage($_FILES['image']));
+                } catch (Exception $e) {
+                    echo "Lỗi upload ảnh: " . $e->getMessage();
+                    return;
+                }
             }
 
-            $response = $this->callApi('PUT', "{$this->apiUrl}/$id", $data);
+            $response = $this->callApi('PUT', "{$this->apiUrl}/$id", $data, true);
 
-            if ($response && isset($response->message) && $response->message === 'Product updated successfully') {
+            if ($response && isset($response->message) && $response->message === 'Sản phẩm đã được cập nhật thành công') {
                 header('Location: /blueskyweb/Product');
                 exit();
             } else {
@@ -107,7 +117,7 @@ class ProductController
     {
         $response = $this->callApi('DELETE', "{$this->apiUrl}/$id");
 
-        if ($response && isset($response->message) && $response->message === 'Product deleted successfully') {
+        if ($response && isset($response->message) && $response->message === 'Sản phẩm đã bị xóa') {
             header('Location: /blueskyweb/Product');
             exit();
         } else {
@@ -116,7 +126,7 @@ class ProductController
     }
 
     // Hàm gọi API chung
-    private function callApi($method, $url, $data = [])
+    private function callApi($method, $url, $data = [], $isMultipart = false)
     {
         $ch = curl_init();
         $options = [
@@ -126,8 +136,13 @@ class ProductController
         ];
 
         if (!empty($data) && ($method === 'POST' || $method === 'PUT')) {
-            $options[CURLOPT_HTTPHEADER] = ['Content-Type: application/json'];
-            $options[CURLOPT_POSTFIELDS] = json_encode($data);
+            if ($isMultipart) {
+                $options[CURLOPT_HTTPHEADER] = ['Content-Type: multipart/form-data'];
+                $options[CURLOPT_POSTFIELDS] = $data;
+            } else {
+                $options[CURLOPT_HTTPHEADER] = ['Content-Type: application/json'];
+                $options[CURLOPT_POSTFIELDS] = json_encode($data);
+            }
         }
 
         curl_setopt_array($ch, $options);
@@ -140,14 +155,15 @@ class ProductController
     // Hàm upload hình ảnh
     private function uploadImage($file)
     {
-        $target_dir = "uploads/";
+        $target_dir = __DIR__ . "/../../uploads/";
 
         // Kiểm tra và tạo thư mục nếu chưa tồn tại
         if (!is_dir($target_dir)) {
             mkdir($target_dir, 0777, true);
         }
 
-        $target_file = $target_dir . basename($file["name"]);
+        $fileName = time() . "_" . basename($file["name"]);
+        $target_file = $target_dir . $fileName;
         $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
         // Kiểm tra file có phải là hình ảnh không

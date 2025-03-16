@@ -16,7 +16,7 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="/blueskyweb/Product/">Quản lý sản phẩm</a>
+        <a class="navbar-brand" href="/blueskyweb/Product">Quản lý sản phẩm</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -24,7 +24,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="/blueskyweb/Product/">Danh sách sản phẩm</a>
+                    <a class="nav-link" href="/blueskyweb/Product">Danh sách sản phẩm</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/blueskyweb/Product/add">Thêm sản phẩm</a>
