@@ -52,6 +52,16 @@ if ($controllerName === 'ApiController' && isset($url[1])) {
                     }
                     break;
                 
+                    case 'PUT':
+                        if ($id) {
+                            $action = 'update';
+                        } else {
+                            http_response_code(400);
+                            echo json_encode(['message' => 'Lỗi: Thiếu ID để cập nhật']);
+                            exit;
+                        }
+                        break;
+                    
             case 'DELETE':
                 if ($id) {
                     $action = 'destroy';

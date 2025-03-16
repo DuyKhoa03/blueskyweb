@@ -27,17 +27,15 @@
                     <a class="nav-link" href="/blueskyweb/Product">Danh sách sản phẩm</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/blueskyweb/Product/add">Thêm sản phẩm</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="/blueskyweb/Category/">Danh sách danh mục</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/blueskyweb/Category/add">Thêm danh mục</a>
                 </li>
                 <li class="nav-item" id="nav-login">
                     <a class="nav-link" href="/blueskyweb/account/login">Login</a>
                 </li>
+                <li class="nav-item" id="nav-user" style="display: none;">
+    <a class="nav-link" href="/blueskyweb/account/profile" id="user-link"></a>
+</li>
+
                 <li class="nav-item" id="nav-logout" style="display: none;">
                     <a class="nav-link" href="#" onclick="logout()">Logout</a>
                 </li>
@@ -52,14 +50,30 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            const token = localStorage.getItem('jwtToken');
-            if (token) {
-                document.getElementById('nav-login').style.display = 'none';
-                document.getElementById('nav-logout').style.display = 'block';
-            } else {
-                document.getElementById('nav-login').style.display = 'block';
-                document.getElementById('nav-logout').style.display = 'none';
-            }
-        }); 
+    const token = localStorage.getItem('jwtToken');
+
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1])); // Giải mã JWT
+            console.log("Decoded Token:", payload); // Debug xem có username không
+            
+            const username = payload.username || "Không xác định"; // Lấy username trực tiếp
+            
+            document.getElementById('user-link').innerText = username;
+            document.getElementById('nav-user').style.display = 'block';
+
+            document.getElementById('nav-login').style.display = 'none';
+            document.getElementById('nav-logout').style.display = 'block';
+        } catch (error) {
+            console.error("Lỗi giải mã token:", error);
+            localStorage.removeItem('jwtToken'); // Nếu lỗi, xóa token
+        }
+    } else {
+        document.getElementById('nav-login').style.display = 'block';
+        document.getElementById('nav-logout').style.display = 'none';
+        document.getElementById('nav-user').style.display = 'none';
+    }
+});
+
     </script>
     <div class="container mt-4"></div>

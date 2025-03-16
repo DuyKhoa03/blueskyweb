@@ -6,16 +6,33 @@ class CategoryApiController
 {
     private $categoryModel;
     private $db;
-
+    private $jwtHandler;
     public function __construct()
     {
         $this->db = (new Database())->getConnection();
         $this->categoryModel = new CategoryModel($this->db);
+        $this->jwtHandler = new JWTHandler();
     }
-
+    private function authenticate()
+    {
+        $headers = getallheaders();
+        if (isset($headers['Authorization'])) {
+            $authHeader = $headers['Authorization'];
+            $jwt = str_replace('Bearer ', '', $authHeader);
+            return $this->jwtHandler->decode($jwt);
+        }
+        return false;
+    }
     // Lấy danh sách danh mục
     public function index()
     {
+        $user = $this->authenticate();
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized - Vui lòng đăng nhập']);
+            exit();
+        }
+
         header('Content-Type: application/json');
         $categories = $this->categoryModel->getCategories();
         echo json_encode($categories);

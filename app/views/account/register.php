@@ -14,12 +14,16 @@
                         <input type="text" class="form-control" id="username" name="username" placeholder="Nhập username" required>
                     </div>
                     <div class="form-group">
+                        <label for="fullname">Họ và tên:</label>
+                        <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Nhập họ và tên" required>
+                    </div>
+                    <div class="form-group">
                         <label for="email">Email:</label>
                         <input type="email" class="form-control" id="email" name="email" placeholder="Nhập email" required>
                     </div>
                     <div class="form-group">
-                        <label for="fullname">Họ và tên:</label>
-                        <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Nhập họ và tên" required>
+                        <label for="phone">Phone:</label>
+                        <input type="number" class="form-control" id="phone" name="phone" placeholder="Nhập SDT" required>
                     </div>
                     <div class="form-group">
                         <label for="password">Mật khẩu:</label>
@@ -57,18 +61,29 @@ document.getElementById('register-form').addEventListener('submit', function (ev
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(jsonData)
     })
-    .then(response => response.json())
+    .then(response => response.json()) // Chuyển phản hồi thành JSON
     .then(data => {
+        const errorMessages = document.getElementById('error-messages');
+        errorMessages.innerHTML = ''; // Xóa lỗi cũ
+
         if (data.message === 'success') {
             alert('Đăng ký thành công! Chuyển đến trang đăng nhập.');
             location.href = '/blueskyweb/account/login';
         } else {
-            document.getElementById('error-messages').innerHTML = data.errors ? data.errors.join('<br>') : 'Đăng ký thất bại!';
+            if (data.errors) {
+                // Hiển thị từng lỗi ngay trên giao diện
+                Object.entries(data.errors).forEach(([key, value]) => {
+                    errorMessages.innerHTML += `<p class="text-danger">${value}</p>`;
+                });
+            } else {
+                errorMessages.innerHTML = '<p class="text-danger">Đăng ký thất bại!</p>';
+            }
         }
     })
     .catch(error => {
         console.error("Lỗi đăng ký:", error);
-        document.getElementById('error-messages').innerHTML = "Lỗi máy chủ, vui lòng thử lại!";
+        document.getElementById('error-messages').innerHTML = "<p class='text-danger'>Lỗi máy chủ, vui lòng thử lại!</p>";
     });
+
 });
 </script>

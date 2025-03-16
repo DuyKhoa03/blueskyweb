@@ -16,14 +16,17 @@ class JWTHandler
     public function encode($data) 
     { 
         $issuedAt = time(); 
-        $expirationTime = $issuedAt + 86400;  // jwt valid for 1 hour from the issued time 
-        $payload = array( 
-            'iat' => $issuedAt, 
-            'exp' => $expirationTime, 
-            'data' => $data 
-        ); 
- 
-        return JWT::encode($payload, $this->secret_key, 'HS256'); 
+    $expirationTime = $issuedAt + 86400;  // Token có hiệu lực trong 1 ngày
+
+    $payload = array( 
+        'iat' => $issuedAt, 
+        'exp' => $expirationTime, 
+        'id' => $data['id'], 
+        'username' => $data['username'], 
+        'email' => $data['email']
+    ); 
+
+    return JWT::encode($payload, $this->secret_key, 'HS256'); 
     } 
  
     // Giải mã JWT 
@@ -32,7 +35,7 @@ public function decode($jwt)
 {
     try {
         $decoded = JWT::decode($jwt, new Key($this->secret_key, 'HS256'));
-        return (array) $decoded->data;
+        return (array) $decoded;  // Trả về toàn bộ payload
     } catch (\Firebase\JWT\ExpiredException $e) {
         http_response_code(401);
         echo json_encode(['error' => 'Token đã hết hạn, vui lòng đăng nhập lại']);

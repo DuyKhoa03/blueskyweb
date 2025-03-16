@@ -10,6 +10,12 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert('Vui lòng đăng nhập');
+            location.href = '/blueskyweb/account/login'; // Điều hướng đến trang đăng nhập 
+            return;
+        }
         fetch('/blueskyweb/api/category', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
@@ -22,7 +28,7 @@
                 const categoryItem = document.createElement('li');
                 categoryItem.className = 'list-group-item';
                 categoryItem.innerHTML = ` 
-                    <h2>${category.name}--${category.id}</h2> 
+                    <h2>${category.name}</h2> 
                     <p>${category.description}</p> 
                     <a href="/blueskyweb/Category/edit/${category.id}" class="btn btn-warning">Sửa</a> 
                     <button class="btn btn-danger" onclick="deleteCategory(${category.id})">Xóa</button> 
@@ -41,6 +47,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.message === 'Category deleted successfully') {
+                    alert('Xóa danh mục thành công');
                     location.reload();
                 } else {
                     alert('Xóa danh mục thất bại');
