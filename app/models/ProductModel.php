@@ -73,37 +73,31 @@ class ProductModel
     }
 
     // Cập nhật sản phẩm
-    public function updateProduct($id, $name, $description, $price, $category_id, $newImagePath = null)
+    public function updateProduct($id, $name, $description, $price, $category_id, $newImagePath)
 {
-    // Lấy sản phẩm hiện tại để kiểm tra
+    // Kiểm tra sản phẩm có tồn tại không
     $currentProduct = $this->getProductById($id);
     if (!$currentProduct) {
         return false;
     }
-
-    // Câu lệnh SQL cập nhật
+    // SQL query cập nhật
     $query = "UPDATE " . $this->table_name . " 
-              SET name=:name, description=:description, price=:price, category_id=:category_id";
-    if ($newImagePath) {
-        $query .= ", image=:image"; // Nếu có ảnh mới thì cập nhật
-    }
-    $query .= " WHERE id=:id";
+              SET name = :name, description = :description, price = :price, image = :image, category_id = :category_id 
+              WHERE id = :id";  // QUAN TRỌNG: Điều kiện WHERE id = ?
 
     $stmt = $this->conn->prepare($query);
 
-    // Gán giá trị vào query
-    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    // Gán giá trị vào SQL
     $stmt->bindParam(':name', $name);
     $stmt->bindParam(':description', $description);
     $stmt->bindParam(':price', $price);
+    $stmt->bindParam(':image', $newImagePath);
     $stmt->bindParam(':category_id', $category_id);
-
-    if ($newImagePath) {
-        $stmt->bindParam(':image', $newImagePath);
-    }
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
     return $stmt->execute();
 }
+
 
 
     // Xóa sản phẩm

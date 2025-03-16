@@ -82,39 +82,46 @@ class ProductController
 
     // Xử lý cập nhật sản phẩm (Gọi API)
     public function update()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $id = $_POST['id'];
-            $data = [
-                'name' => $_POST['name'] ?? '',
-                'description' => $_POST['description'] ?? '',
-                'price' => $_POST['price'] ?? '',
-                'category_id' => $_POST['category_id'] ?? null,
-                'existing_image' => $_POST['current-image'] ?? ''
-            ];
+{
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $id = $_POST['id'] ?? null;
+        // Debug: Kiểm tra ID có được gửi đi không
+        error_log("ID gửi đi từ ProductController: " . $id);
 
-            // Xử lý upload hình ảnh mới nếu có
-            if (!empty($_FILES['image']['name'])) {
-                try {
-                    $data['image'] = new CURLFile($this->uploadImage($_FILES['image']));
-                } catch (Exception $e) {
-                    echo "Lỗi upload ảnh: " . $e->getMessage();
-                    return;
-                }
-            }
+        if (!$id) {
+            echo "Lỗi: Không tìm thấy ID sản phẩm!";
+            return;
+        }
 
-            $response = $this->callApi('PUT', "{$this->apiUrl}/$id", $data, true);
+        $data = [
+            'name' => $_POST['name'] ?? '',
+            'description' => $_POST['description'] ?? '',
+            'price' => $_POST['price'] ?? '',
+            'category_id' => $_POST['category_id'] ?? null,
+            'image' => $_POST['current_image'] ?? '' // Giữ ảnh cũ nếu không có ảnh mới
+        ];
 
-            if ($response && isset($response->message) && $response->message === 'Sản phẩm đã được cập nhật thành công') {
-                header('Location: /blueskyweb/Product');
-                exit();
-            } else {
-                echo "Cập nhật sản phẩm thất bại!";
-                echo "Phản hồi từ API: ";
-        print_r($response);
+        // Xử lý upload ảnh nếu có
+        if (!empty($_FILES['image']['name'])) {
+            try {
+                $data['image'] = new CURLFile($this->uploadImage($_FILES['image']));
+            } catch (Exception $e) {
+                echo "Lỗi upload ảnh: " . $e->getMessage();
+                return;
             }
         }
+
+        // Gọi API cập nhật
+        $response = $this->callApi('POST', "{$this->apiUrl}/$id", $data, true);
+
+        if ($response && isset($response->message) && $response->message === 'Sản phẩm đã được cập nhật') {
+            header('Location: /blueskyweb/Product');
+            exit();
+        } else {
+            echo "Cập nhật sản phẩm thất bại!";
+        }
     }
+}
 
     // Xóa sản phẩm (Gọi API)
     public function delete($id)

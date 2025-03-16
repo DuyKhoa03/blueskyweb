@@ -117,44 +117,37 @@ public function update($id)
 {
     header('Content-Type: application/json');
 
-    // Kiểm tra nếu request không phải là PUT
-    if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && ($_POST['_method'] ?? '') !== 'PUT') {
         http_response_code(405);
         echo json_encode(['message' => 'Method Not Allowed']);
-        exit();
+        return;
     }
 
-    // Lấy dữ liệu từ `$_POST`
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Lỗi: ID sản phẩm không hợp lệ']);
+        return;
+    }
+
+    // Nhận dữ liệu từ `$_POST`
     $name = $_POST['name'] ?? '';
     $description = $_POST['description'] ?? '';
     $price = $_POST['price'] ?? '';
     $category_id = $_POST['category_id'] ?? null;
-    $newImagePath = null;
 
-    // Debug dữ liệu nhận được
-    error_log("Updating product ID: $id, Name: $name, Description: $description, Price: $price, Category: $category_id");
-    echo "<script>console.log('Updating product ID: $id, Name: $name, Description: $description, Price: $price, Category: $category_id');</script>";
-
-    // Kiểm tra `category_id` có hợp lệ không
-    if (empty($category_id) || !is_numeric($category_id)) {
-        http_response_code(400);
-        echo json_encode(['message' => 'Danh mục không hợp lệ']);
-        exit();
-    }
-
-    // Kiểm tra sản phẩm có tồn tại không
-    $product = $this->productModel->getProductById($id);
-    if (!$product) {
+    // Lấy thông tin sản phẩm hiện tại
+    $currentProduct = $this->productModel->getProductById($id);
+    if (!$currentProduct) {
         http_response_code(404);
         echo json_encode(['message' => 'Sản phẩm không tồn tại']);
         return;
     }
 
-    // Xử lý upload ảnh mới nếu có
+    // Kiểm tra nếu có ảnh mới
+    $imagePath = $currentProduct->image; // Giữ nguyên ảnh cũ mặc định
+
     if (!empty($_FILES['image']['name'])) {
         $uploadDir = "uploads/";
-
-        // Kiểm tra và tạo thư mục nếu chưa có
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -163,33 +156,30 @@ public function update($id)
         $targetFilePath = $uploadDir . $fileName;
 
         if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
-            $newImagePath = $targetFilePath;
+            $imagePath = $targetFilePath;
 
             // Xóa ảnh cũ nếu có
-            if (!empty($product->image) && file_exists($product->image)) {
-                unlink($product->image);
+            if (!empty($currentProduct->image) && file_exists($currentProduct->image)) {
+                unlink($currentProduct->image);
             }
-
-            error_log("New image uploaded: " . $newImagePath);
         } else {
             http_response_code(400);
             echo json_encode(['message' => 'Lỗi khi tải ảnh lên']);
-            exit();
+            return;
         }
     }
 
-    // Cập nhật sản phẩm (truyền thêm `$newImagePath` nếu có ảnh mới)
-    $result = $this->productModel->updateProduct($id, $name, $description, $price, $category_id, $newImagePath);
+    // Cập nhật sản phẩm
+    $result = $this->productModel->updateProduct($id, $name, $description, $price, $category_id, $imagePath);
 
     if ($result) {
         http_response_code(200);
-        echo json_encode(['message' => 'Sản phẩm đã được cập nhật thành công']);
+        echo json_encode(['message' => 'Sản phẩm đã được cập nhật', 'image' => $imagePath]);
     } else {
         http_response_code(500);
-        echo json_encode(['message' => 'Cập nhật sản phẩm thất bại']);
+        echo json_encode(['message' => 'Lỗi khi cập nhật sản phẩm']);
     }
 }
-
 
 
 public function destroy($id)

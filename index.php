@@ -38,14 +38,20 @@ if ($controllerName === 'ApiController' && isset($url[1])) {
                     $action = 'index';
                 }
                 break;
-            case 'POST':
-                $action = 'store';
-                break;
-            case 'PUT':
-                if ($id) {
-                    $action = 'update';
-                }
-                break;
+                case 'POST':
+                    if (isset($_POST['_method']) && $_POST['_method'] === 'PUT') {
+                        if ($id) {
+                            $action = 'update';
+                        } else {
+                            http_response_code(400);
+                            echo json_encode(['message' => 'Lỗi: Thiếu ID sản phẩm để cập nhật']);
+                            exit;
+                        }
+                    } else {
+                        $action = 'store';
+                    }
+                    break;
+                
             case 'DELETE':
                 if ($id) {
                     $action = 'destroy';
