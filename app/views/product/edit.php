@@ -34,13 +34,16 @@
     <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
 </form>
 
-<a href="/blueskyweb/Product/list" class="btn btn-secondary mt-2">Quay lại danh sách sản phẩm</a>
+<a href="/blueskyweb/Product" class="btn btn-secondary mt-2">Quay lại danh sách sản phẩm</a>
 
 <?php include 'app/views/shares/footer.php'; ?>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const productId = <?= $editId ?>; // Lấy ID sản phẩm cần sửa
+    const productId = <?= isset($editId) ? $editId : 'null' ?>;
+if (productId === null) {
+    alert("Lỗi: Không tìm thấy ID sản phẩm.");
+}
 
     // Lấy danh mục sản phẩm từ API
     fetch('/blueskyweb/api/category')
@@ -80,26 +83,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Xử lý sự kiện khi submit form
     document.getElementById('edit-product-form').addEventListener('submit', function (event) {
-        event.preventDefault();
+    event.preventDefault();
+    const productId = document.getElementById('id').value;
+    const formData = new FormData(this);
 
-        const formData = new FormData(this); // Sử dụng FormData để gửi ảnh
+    // Chuyển category_id thành số nguyên
+    formData.set('category_id', parseInt(formData.get('category_id')));
 
-        fetch(`/blueskyweb/api/product/${productId}`, {
-            method: 'POST', // API phải hỗ trợ `POST` với `_method=PUT`
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message === 'Sản phẩm đã được cập nhật thành công') {
-                location.href = '/blueskyweb/Product';
-            } else {
-                alert('Cập nhật sản phẩm thất bại');
-            }
-        })
-        .catch(error => {
-            console.error("Lỗi khi gửi yêu cầu:", error);
-            alert("Lỗi: Không thể kết nối với máy chủ.");
-        });
+    console.log("Submitting FormData:", Object.fromEntries(formData.entries()));
+
+    fetch(`/blueskyweb/api/product/${productId}`, {
+        method: 'PUT',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(response => response.text()) // Lấy raw response để debug
+    .then(text => {
+        console.log("Raw Response:", text);
+        return JSON.parse(text);
+    })
+    .then(data => {
+        console.log("API Response:", data);
+        if (data.message === 'Sản phẩm đã được cập nhật thành công') {
+            alert("Cập nhật sản phẩm thành công!");
+            location.href = '/blueskyweb/Product';
+        } else {
+            alert("Cập nhật sản phẩm thất bại: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Lỗi khi gửi yêu cầu:", error);
+        alert("Lỗi: Không thể kết nối với máy chủ.");
     });
+});
+
 });
 </script>

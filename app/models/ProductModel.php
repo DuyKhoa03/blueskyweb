@@ -74,49 +74,37 @@ class ProductModel
 
     // Cập nhật sản phẩm
     public function updateProduct($id, $name, $description, $price, $category_id, $newImagePath = null)
-    {
-        // Lấy sản phẩm hiện tại
-        $currentProduct = $this->getProductById($id);
-        if (!$currentProduct) {
-            return false;
-        }
-
-        // Nếu có ảnh mới thì xóa ảnh cũ
-        if ($newImagePath && !empty($currentProduct->image)) {
-            $oldImagePath = __DIR__ . "/../../uploads/" . basename($currentProduct->image);
-            if (file_exists($oldImagePath)) {
-                unlink($oldImagePath);
-            }
-        }
-
-        // SQL query
-        $query = "UPDATE " . $this->table_name . " SET name=:name, description=:description, price=:price, category_id=:category_id";
-        if ($newImagePath) {
-            $query .= ", image=:image";
-        }
-        $query .= " WHERE id=:id";
-
-        $stmt = $this->conn->prepare($query);
-
-        // Làm sạch dữ liệu
-        $name = htmlspecialchars(strip_tags($name));
-        $description = htmlspecialchars(strip_tags($description));
-        $price = htmlspecialchars(strip_tags($price));
-        $category_id = htmlspecialchars(strip_tags($category_id));
-
-        // Gán dữ liệu vào câu lệnh SQL
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':price', $price);
-        $stmt->bindParam(':category_id', $category_id);
-
-        if ($newImagePath) {
-            $stmt->bindParam(':image', $newImagePath);
-        }
-
-        return $stmt->execute();
+{
+    // Lấy sản phẩm hiện tại để kiểm tra
+    $currentProduct = $this->getProductById($id);
+    if (!$currentProduct) {
+        return false;
     }
+
+    // Câu lệnh SQL cập nhật
+    $query = "UPDATE " . $this->table_name . " 
+              SET name=:name, description=:description, price=:price, category_id=:category_id";
+    if ($newImagePath) {
+        $query .= ", image=:image"; // Nếu có ảnh mới thì cập nhật
+    }
+    $query .= " WHERE id=:id";
+
+    $stmt = $this->conn->prepare($query);
+
+    // Gán giá trị vào query
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    $stmt->bindParam(':name', $name);
+    $stmt->bindParam(':description', $description);
+    $stmt->bindParam(':price', $price);
+    $stmt->bindParam(':category_id', $category_id);
+
+    if ($newImagePath) {
+        $stmt->bindParam(':image', $newImagePath);
+    }
+
+    return $stmt->execute();
+}
+
 
     // Xóa sản phẩm
     public function deleteProduct($id)

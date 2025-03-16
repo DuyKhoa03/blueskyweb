@@ -67,16 +67,18 @@ class ProductController
 
     // Hiển thị form cập nhật sản phẩm
     public function edit($id)
-    {
-        $product = $this->callApi('GET', "{$this->apiUrl}/$id");
-        $categories = $this->callApi('GET', 'http://localhost/blueskyweb/api/category');
+{
+    $product = $this->callApi('GET', "{$this->apiUrl}/$id");
+    $categories = $this->callApi('GET', 'http://localhost/blueskyweb/api/category');
 
-        if ($product) {
-            include 'app/views/product/edit.php';
-        } else {
-            echo "Không thấy sản phẩm.";
-        }
+    if ($product) {
+        $editId = $id; // Gán giá trị cho $editId
+        include 'app/views/product/edit.php';
+    } else {
+        echo "Không thấy sản phẩm.";
     }
+}
+
 
     // Xử lý cập nhật sản phẩm (Gọi API)
     public function update()
@@ -88,7 +90,7 @@ class ProductController
                 'description' => $_POST['description'] ?? '',
                 'price' => $_POST['price'] ?? '',
                 'category_id' => $_POST['category_id'] ?? null,
-                'existing_image' => $_POST['existing_image'] ?? ''
+                'existing_image' => $_POST['current-image'] ?? ''
             ];
 
             // Xử lý upload hình ảnh mới nếu có
@@ -108,6 +110,8 @@ class ProductController
                 exit();
             } else {
                 echo "Cập nhật sản phẩm thất bại!";
+                echo "Phản hồi từ API: ";
+        print_r($response);
             }
         }
     }

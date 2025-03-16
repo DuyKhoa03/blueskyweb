@@ -51,22 +51,33 @@
     });
 
     function deleteProduct(id) {
-        if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-            fetch(`/blueskyweb/api/product/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'Product deleted successfully') {
-                    location.reload();
-                } else {
-                    alert('Xóa sản phẩm thất bại');
-                }
-            })
-            .catch(error => console.error("Lỗi khi xóa sản phẩm:", error));
-        }
+    console.log("Deleting Product ID:", id); // Debug
+
+    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+        fetch(`/blueskyweb/api/product/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
+        })
+        .then(response => {
+            console.log("Delete Response Status:", response.status); // Debug HTTP status
+            return response.json();
+        })
+        .then(data => {
+            console.log("Delete Response Data:", data); // Debug Response Data
+            if (data.message === 'Sản phẩm đã bị xóa') {
+                alert("Xóa sản phẩm thành công!");
+                location.reload();
+            } else {
+                alert("Xóa sản phẩm thất bại: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Lỗi khi xóa sản phẩm:", error);
+            alert("Lỗi hệ thống khi xóa sản phẩm!");
+        });
     }
+}
+
 </script>
 
 <style>
