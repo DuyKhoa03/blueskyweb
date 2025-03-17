@@ -18,7 +18,9 @@
         }
         fetch('/blueskyweb/api/category', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+             }
         })
         .then(response => response.json())
         .then(data => {

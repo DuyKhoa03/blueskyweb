@@ -202,7 +202,8 @@ public function updateUser()
             $token = $this->jwtHandler->encode([
                 'id' => $user->id,
                 'username' => $user->username,
-                'email' => $user->email
+                'email' => $user->email,
+                'role' => $user->role
             ]);
             echo json_encode(['token' => $token]);
         } else {

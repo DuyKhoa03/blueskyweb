@@ -40,7 +40,8 @@
                             <p>Giá: ${product.price} VND</p> 
                             <p>Danh mục: ${product.category_name}</p> 
                             <a href="/blueskyweb/Product/edit/${product.id}" class="btn btn-warning">Sửa</a> 
-                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Xóa</button> 
+                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Xóa</button>
+                             
                         </div>
                     </div>
                 `; 
