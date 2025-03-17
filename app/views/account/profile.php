@@ -1,3 +1,24 @@
+<?php
+// Khởi động session nếu chưa có
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+// Lấy token từ session (nếu có)
+$token = $_SESSION['jwtToken'] ?? null;
+require_once 'app/utils/JWTHandler.php'; // Để giải mã token
+$jwtHandler = new JWTHandler();
+$username = null;
+$userid = null;
+if ($token) {
+    try {
+            $tokenData = $jwtHandler->decode($token);
+            $username = $tokenData['username'] ?? 'Không xác định';
+            $userid = $tokenData['id'] ?? null;
+    } catch (Exception $e) {
+        unset($_SESSION['jwtToken']); // Xóa token nếu không hợp lệ
+    }
+}
+?>
 <?php include 'app/views/shares/header.php'; ?>
 <div class="container mt-5">
     <h2>Thông tin tài khoản</h2>
@@ -29,7 +50,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const token = localStorage.getItem('jwtToken');
+    const token = <?php echo json_encode($token); ?>;
 
     if (!token) {
         alert("Bạn cần đăng nhập để xem trang này!");
@@ -69,7 +90,7 @@ function showEditForm() {
 }
 
 function updateUser() {
-    const token = localStorage.getItem('jwtToken');
+    const token = <?php echo json_encode($token); ?>;
     const updatedData = {
         fullname: document.getElementById('edit-fullname').value,
         email: document.getElementById('edit-email').value,

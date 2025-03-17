@@ -34,7 +34,6 @@ class CartApiController
     // Lấy giỏ hàng của user
     public function show($userId)
     {
-        error_log("CartApiController - index() called with userId: " . $userId);
         header('Content-Type: application/json');
 
         if (!$this->authenticate()) {
@@ -73,7 +72,7 @@ class CartApiController
         $this->cartModel->addToCart($userId, $productId, $quantity);
         echo json_encode(['message' => 'Added to cart']);
     }
-
+    
     // Cập nhật giỏ hàng
     public function update($cartId)
     {

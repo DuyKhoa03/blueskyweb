@@ -39,7 +39,7 @@ class CartModel
     // Lấy giỏ hàng của user
     public function getCartByUser($userId)
     {
-        $query = "SELECT c.id, p.name, p.price, c.quantity, (p.price * c.quantity) as total_price
+        $query = "SELECT c.id, p.name, p.price, p.image, c.quantity, (p.price * c.quantity) as total_price
                   FROM " . $this->table_name . " c
                   JOIN product p ON c.product_id = p.id
                   WHERE c.user_id = :user_id";

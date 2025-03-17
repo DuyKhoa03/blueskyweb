@@ -68,8 +68,7 @@ document.getElementById('login-form').addEventListener('submit', function (event
     })
     .then(response => response.json())
     .then(data => {
-        if (data.token) {
-            localStorage.setItem('jwtToken', data.token);
+        if (data.message === 'Đăng nhập thành công') {
             location.href = '/blueskyweb/Product';
         } else {
             document.getElementById('login-error').textContent = data.message || 'Đăng nhập thất bại';

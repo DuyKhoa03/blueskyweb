@@ -1,56 +1,71 @@
 <?php
+require_once 'app/config/database.php';
+require_once 'app/models/CartModel.php';
+require_once 'app/utils/JWTHandler.php';
+
 class CartController
 {
-    private $apiUrl;
+    private $cartModel;
+    private $db;
+    private $jwtHandler;
 
     public function __construct()
     {
-        $this->apiUrl = 'http://localhost/blueskyweb/api/cart';
+        $this->db = (new Database())->getConnection();
+        $this->cartModel = new CartModel($this->db);
+        $this->jwtHandler = new JWTHandler();
     }
 
     // Hiển thị giỏ hàng
     public function index()
     {
-        $cart = $this->callApi('GET', "{$this->apiUrl}/{$_SESSION['user_id']}");
-        include 'app/views/cart/list.php';
-    }
+        // Khởi động session nếu chưa có
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
 
-    // Gọi API để thêm sản phẩm vào giỏ
-    public function add()
-    {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $data = [
-                'product_id' => $_POST['product_id'],
-                'quantity' => $_POST['quantity'] ?? 1
-            ];
-
-            $this->callApi('POST', "{$this->apiUrl}/add", $data);
-            header('Location: /blueskyweb/Cart');
+        // Kiểm tra token trong session
+        if (!isset($_SESSION['jwtToken'])) {
+            header('Location: /blueskyweb/account/login');
             exit();
         }
-    }
 
-    // Xóa sản phẩm khỏi giỏ
-    public function remove($cartId)
-    {
-        $this->callApi('DELETE', "{$this->apiUrl}/remove/$cartId");
-        header('Location: /blueskyweb/Cart');
-        exit();
-    }
+        $token = $_SESSION['jwtToken'];
 
-    // Hàm gọi API chung
-    private function callApi($method, $url, $data = [])
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        if ($data) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        // Giải mã token để lấy userId
+        try {
+            $tokenData = $this->jwtHandler->decode($token);
+            $userId = $tokenData['id'];
+        } catch (Exception $e) {
+            // Token không hợp lệ hoặc hết hạn
+            unset($_SESSION['jwtToken']);
+            header('Location: /blueskyweb/account/login');
+            exit();
         }
-        $response = curl_exec($ch);
-        curl_close($ch);
-        return json_decode($response);
+
+        // Load view giỏ hàng
+        include_once 'app/views/cart/index.php';
+    }
+
+    // Thêm sản phẩm vào giỏ hàng (gọi API từ view)
+    public function add()
+    {
+        // Không cần xử lý trực tiếp ở đây, view sẽ gọi API /api/cart/store
+        $this->index(); // Tạm thời hiển thị lại giỏ hàng
+    }
+
+    // Cập nhật giỏ hàng (gọi API từ view)
+    public function update()
+    {
+        // Không cần xử lý trực tiếp, view sẽ gọi API /api/cart/update
+        $this->index(); // Tạm thời hiển thị lại giỏ hàng
+    }
+
+    // Xóa sản phẩm khỏi giỏ hàng (gọi API từ view)
+    public function remove()
+    {
+        // Không cần xử lý trực tiếp, view sẽ gọi API /api/cart/destroy
+        $this->index(); // Tạm thời hiển thị lại giỏ hàng
     }
 }
 ?>
