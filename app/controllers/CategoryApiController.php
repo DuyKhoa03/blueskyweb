@@ -30,14 +30,16 @@ class CategoryApiController
     // Lấy danh sách danh mục
     public function index()
     {
-        if ($this->authenticate()) {
-            header('Content-Type: application/json');
-            $categories = $this->categoryModel->getCategories();
+        // if ($this->authenticate()) {
+        //     header('Content-Type: application/json');
+        //     $categories = $this->categoryModel->getCategories();
+        //     echo json_encode($categories);
+        // } else {
+        //     http_response_code(401);
+        //     echo json_encode(['message' => 'Unauthorized']);
+        // }
+        $categories = $this->categoryModel->getCategories();
             echo json_encode($categories);
-        } else {
-            http_response_code(401);
-            echo json_encode(['message' => 'Unauthorized']);
-        }
     }
 
     // Lấy thông tin danh mục theo ID

@@ -1,19 +1,22 @@
 <?php
+require_once 'app/config/database.php';
 require_once 'app/models/CartModel.php';
 require_once 'app/utils/JWTHandler.php';
 
 class CartApiController
 {
     private $cartModel;
+    private $db;
     private $jwtHandler;
 
     public function __construct()
     {
-        $this->cartModel = new CartModel((new Database())->getConnection());
+        $this->db = (new Database())->getConnection();
+        $this->cartModel = new CartModel($this->db);
         $this->jwtHandler = new JWTHandler();
     }
 
-    // Kiểm tra xác thực người dùng bằng JWT
+    // Xác thực JWT
     private function authenticate()
     {
         $headers = apache_request_headers();
@@ -22,125 +25,78 @@ class CartApiController
             $arr = explode(" ", $authHeader);
             $jwt = $arr[1] ?? null;
             if ($jwt) {
-                $decoded = $this->jwtHandler->decode($jwt);
-                return $decoded ? $decoded['id'] : null;
+                return $this->jwtHandler->decode($jwt);
             }
         }
         return null;
     }
 
     // Lấy giỏ hàng của user
-    public function index()
+    public function show($userId)
     {
+        error_log("CartApiController - index() called with userId: " . $userId);
         header('Content-Type: application/json');
-        $user_id = $this->authenticate();
-        if (!$user_id) {
+
+        if (!$this->authenticate()) {
             http_response_code(401);
             echo json_encode(['message' => 'Unauthorized']);
             return;
         }
 
-        $cartItems = $this->cartModel->getCartItems($user_id);
-        echo json_encode($cartItems);
+        $cart = $this->cartModel->getCartByUser($userId);
+        echo json_encode($cart);
     }
 
     // Thêm sản phẩm vào giỏ hàng
     public function store()
     {
         header('Content-Type: application/json');
-        $user_id = $this->authenticate();
-        if (!$user_id) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $authUser = $this->authenticate();
+
+        if (!$authUser) {
             http_response_code(401);
             echo json_encode(['message' => 'Unauthorized']);
             return;
         }
 
-        $data = json_decode(file_get_contents("php://input"), true);
-        $product_id = $data['product_id'] ?? null;
+        $userId = $authUser['id'];
+        $productId = $data['product_id'] ?? null;
         $quantity = $data['quantity'] ?? 1;
 
-        if (!$product_id) {
+        if (!$productId) {
             http_response_code(400);
-            echo json_encode(['message' => 'Thiếu product_id']);
+            echo json_encode(['message' => 'Missing product_id --- ' . $productId . ' --- ' . $quantity . ' --- ' . $userId]);
             return;
         }
 
-        if ($this->cartModel->addToCart($user_id, $product_id, $quantity)) {
-            http_response_code(201);
-            echo json_encode(['message' => 'Đã thêm vào giỏ hàng']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Lỗi khi thêm vào giỏ hàng']);
-        }
+        $this->cartModel->addToCart($userId, $productId, $quantity);
+        echo json_encode(['message' => 'Added to cart']);
     }
 
-    // Cập nhật số lượng sản phẩm trong giỏ hàng
-    public function update($id)
+    // Cập nhật giỏ hàng
+    public function update($cartId)
     {
         header('Content-Type: application/json');
-        $user_id = $this->authenticate();
-        if (!$user_id) {
-            http_response_code(401);
-            echo json_encode(['message' => 'Unauthorized']);
-            return;
-        }
-
         $data = json_decode(file_get_contents("php://input"), true);
-        $quantity = $data['quantity'] ?? null;
+        $quantity = $data['quantity'] ?? 1;
 
-        if (!$quantity || $quantity <= 0) {
+        if (!$cartId) {
             http_response_code(400);
-            echo json_encode(['message' => 'Số lượng không hợp lệ']);
+            echo json_encode(['message' => 'Missing cart ID']);
             return;
         }
 
-        if ($this->cartModel->updateCartItem($id, $quantity)) {
-            http_response_code(200);
-            echo json_encode(['message' => 'Cập nhật thành công']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Lỗi khi cập nhật']);
-        }
+        $this->cartModel->updateCart($cartId, $quantity);
+        echo json_encode(['message' => 'Cart updated']);
     }
 
     // Xóa sản phẩm khỏi giỏ hàng
-    public function destroy($id)
+    public function destroy($cartId)
     {
         header('Content-Type: application/json');
-        $user_id = $this->authenticate();
-        if (!$user_id) {
-            http_response_code(401);
-            echo json_encode(['message' => 'Unauthorized']);
-            return;
-        }
-
-        if ($this->cartModel->removeCartItem($id)) {
-            http_response_code(200);
-            echo json_encode(['message' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Lỗi khi xóa sản phẩm']);
-        }
-    }
-
-    // Xóa toàn bộ giỏ hàng
-    public function clear()
-    {
-        header('Content-Type: application/json');
-        $user_id = $this->authenticate();
-        if (!$user_id) {
-            http_response_code(401);
-            echo json_encode(['message' => 'Unauthorized']);
-            return;
-        }
-
-        if ($this->cartModel->clearCart($user_id)) {
-            http_response_code(200);
-            echo json_encode(['message' => 'Đã xóa toàn bộ giỏ hàng']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Lỗi khi xóa giỏ hàng']);
-        }
+        $this->cartModel->removeFromCart($cartId);
+        echo json_encode(['message' => 'Removed from cart']);
     }
 }
 ?>

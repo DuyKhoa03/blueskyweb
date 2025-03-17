@@ -28,7 +28,6 @@ class JWTHandler
     return JWT::encode($payload, $this->secret_key, 'HS256'); 
     } 
  
-    // Giải mã JWT 
     // Giải mã JWT
 public function decode($jwt)
 {
