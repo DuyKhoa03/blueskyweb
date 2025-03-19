@@ -22,7 +22,7 @@
     <p class="text-danger">Danh mục không tồn tại hoặc có lỗi khi tải dữ liệu.</p>
 <?php endif; ?>
 
-<a href="/blueskyweb/Category/list" class="btn btn-secondary mt-2">Quay lại danh sách danh mục</a>
+<a href="/blueskyweb/Category" class="btn btn-secondary mt-2">Quay lại danh sách danh mục</a>
 
 <?php include 'app/views/shares/footer.php'; ?>
 
@@ -46,6 +46,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.message === 'Category updated successfully') {
+                alert('Cập nhật danh mục thành công');
                 location.href = '/blueskyweb/Category';
             } else {
                 alert('Cập nhật danh mục thất bại');

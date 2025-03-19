@@ -1,85 +1,80 @@
 <?php include 'app/views/shares/header.php'; ?>
-<h1>Sửa sản phẩm</h1>
-<form id="edit-product-form">
-    <input type="hidden" id="id" name="id">
+
+<h1>Chỉnh sửa sản phẩm</h1>
+
+<form id="edit-product-form" enctype="multipart/form-data">
+    <input type="hidden" id="id" name="id" value="<?= $product->id ?>">
+
     <div class="form-group">
         <label for="name">Tên sản phẩm:</label>
-        <input type="text" id="name" name="name" class="form-control" required>
+        <input type="text" id="name" name="name" class="form-control" value="<?= $product->name ?>" required>
     </div>
+
     <div class="form-group">
         <label for="description">Mô tả:</label>
-        <textarea id="description" name="description" class="form-control" required></textarea>
+        <textarea id="description" name="description" class="form-control" required><?= $product->description ?></textarea>
     </div>
+
     <div class="form-group">
         <label for="price">Giá:</label>
-        <input type="number" id="price" name="price" class="form-control" step="0.01" required>
+        <input type="number" id="price" name="price" class="form-control" step="0.01" value="<?= $product->price ?>" required>
     </div>
+
     <div class="form-group">
         <label for="category_id">Danh mục:</label>
         <select id="category_id" name="category_id" class="form-control" required>
-            <!-- Các danh mục sẽ được tải từ API và hiển thị tại đây -->
+            <?php foreach ($categories as $category) : ?>
+                <option value="<?= $category->id ?>" <?= ($category->id == $product->category_id) ? 'selected' : '' ?>>
+                    <?= $category->name ?>
+                </option>
+            <?php endforeach; ?>
         </select>
     </div>
+
+    <div class="form-group">
+    <label for="image">Chọn ảnh mới (nếu có):</label>
+    <input type="file" id="image" name="image" class="form-control" accept="image/*">
+
+    <p>Ảnh hiện tại:</p>
+    <?php if (!empty($product->image)) : ?>
+        <img src="/blueskyweb/<?= htmlspecialchars($product->image) ?>" width="150" alt="Ảnh sản phẩm">
+        <input type="hidden" id="current_image" name="current_image" value="<?= htmlspecialchars($product->image) ?>">
+    <?php else : ?>
+        <p>Không có ảnh</p>
+    <?php endif; ?>
+</div>
+
+
     <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
 </form>
 
-<a href="/blueskyweb/Product/list" class="btn btn-secondary mt-2">Quay lại danh sách
-    sản phẩm</a>
+<script>
+document.getElementById('edit-product-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+
+    formData.append('_method', 'PUT'); // Bổ sung _method=PUT
+    for (let [key, value] of formData.entries()) {
+    console.log(`${key}:`, value);  // Debug xem ảnh có được gửi không
+}
+fetch('/blueskyweb/api/product/' + document.getElementById('id').value, { 
+    method: 'POST',  // Vẫn dùng POST để bypass lỗi trình duyệt không hỗ trợ PUT
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    console.log("Phản hồi từ API:", data);
+    if (data.message === 'Sản phẩm đã được cập nhật') {
+        location.href = '/blueskyweb/Product';
+    } else {
+        alert('Cập nhật sản phẩm thất bại: ' + (data.message || 'Không rõ nguyên nhân'));
+    }
+})
+.catch(error => {
+    console.error("Lỗi Fetch API:", error);
+    alert('Lỗi kết nối đến server!');
+});
+});
+</script>
 
 <?php include 'app/views/shares/footer.php'; ?>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // const urlParams = new URLSearchParams(window.location.search); 
-        const productId = <?= $editId ?>;
-
-
-        fetch(`/blueskyweb/api/product/${productId}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('id').value = data.id;
-                document.getElementById('name').value = data.name;
-                document.getElementById('description').value = data.description;
-                document.getElementById('price').value = data.price;
-                document.getElementById('category_id').value = data.category_id;
-            });
-
-        fetch('/blueskyweb/api/category')
-            .then(response => response.json())
-            .then(data => {
-                const categorySelect = document.getElementById('category_id');
-                data.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category.id;
-                    option.textContent = category.name;
-                    categorySelect.appendChild(option);
-                });
-            });
-
-        document.getElementById('edit-product-form').addEventListener('submit',
-            function (event) {
-                event.preventDefault();
-
-                const formData = new FormData(this);
-                const jsonData = {};
-                formData.forEach((value, key) => {
-                    jsonData[key] = value;
-                });
-                fetch(`/blueskyweb/api/product/${jsonData.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(jsonData)
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.message === 'Product updated successfully') {
-                            location.href = '/blueskyweb/Product';
-                        } else {
-                            alert('Cập nhật sản phẩm thất bại');
-                        }
-                    });
-            });
-    }); 
-</script>

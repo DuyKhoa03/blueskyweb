@@ -2,21 +2,22 @@
 require_once('app/config/database.php');
 require_once('app/models/ProductModel.php');
 require_once('app/models/CategoryModel.php');
+require_once('app/utils/JWTHandler.php');
 
-require_once('app/utils/JWTHandler.php'); // 
 class ProductApiController
 {
     private $productModel;
     private $db;
-    private $jwtHandler; // 
+    private $jwtHandler;
+
     public function __construct()
     {
         $this->db = (new Database())->getConnection();
         $this->productModel = new ProductModel($this->db);
-
-        $this->jwtHandler = new JWTHandler(); // 
+        $this->jwtHandler = new JWTHandler();
     }
 
+    // Kiểm tra xác thực bằng JWT
     private function authenticate()
     {
         $headers = apache_request_headers();
@@ -32,8 +33,7 @@ class ProductApiController
         return false;
     }
 
-
-    // Lấy danh sách sản phẩm 
+    // Lấy danh sách sản phẩm
     public function index()
     {
         if ($this->authenticate()) {
@@ -46,7 +46,7 @@ class ProductApiController
         }
     }
 
-    // Lấy thông tin sản phẩm theo ID 
+    // Lấy thông tin sản phẩm theo ID
     public function show($id)
     {
         header('Content-Type: application/json');
@@ -59,75 +59,157 @@ class ProductApiController
         }
     }
 
-    // Thêm sản phẩm mới 
     public function store()
-    {
+{
+    header('Content-Type: application/json');
 
-        header('Content-Type: application/json');
-        $data = json_decode(file_get_contents("php://input"), true);
+    // Debug log để kiểm tra dữ liệu nhận được
+    error_log("Received POST: " . print_r($_POST, true));
+    error_log("Received FILES: " . print_r($_FILES, true));
 
-        $name = $data['name'] ?? '';
-        $description = $data['description'] ?? '';
-        $price = $data['price'] ?? '';
-        $category_id = $data['category_id'] ?? null;
+    // Đọc dữ liệu từ `$_POST`
+    $name = $_POST['name'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $price = $_POST['price'] ?? '';
+    $category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : null;
+    $imagePath = null;
 
-        $result = $this->productModel->addProduct(
-            $name,
-            $description,
-            $price,
-            $category_id,
-            null
-        );
+    // Kiểm tra danh mục có tồn tại không
+    $categoryModel = new CategoryModel($this->db);
+    if (!$categoryModel->getCategoryById($category_id)) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Danh mục không hợp lệ', 'category_id' => $category_id]);
+        exit();
+    }
 
-        if (is_array($result)) {
-            http_response_code(400);
-            echo json_encode(['errors' => $result]);
+    // Xử lý upload ảnh
+    if (!empty($_FILES['image']['name'])) {
+        $uploadDir = "uploads/";
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = time() . "_" . basename($_FILES["image"]["name"]);
+        $targetFilePath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
+            $imagePath = $targetFilePath;
         } else {
-            http_response_code(201);
-            echo json_encode(['message' => 'Product created successfully']);
+            http_response_code(400);
+            echo json_encode(['message' => 'Lỗi khi tải ảnh lên']);
+            exit();
         }
     }
 
-    // Cập nhật sản phẩm theo ID 
-    public function update($id)
-    {
-        header('Content-Type: application/json');
-        $data = json_decode(file_get_contents("php://input"), true);
+    // Thêm sản phẩm vào database
+    $result = $this->productModel->addProduct($name, $description, $price, $category_id, $imagePath);
 
-        $name = $data['name'] ?? '';
-        $description = $data['description'] ?? '';
-        $price = $data['price'] ?? '';
-        $category_id = $data['category_id'] ?? null;
+    if ($result) {
+        http_response_code(201);
+        echo json_encode(['message' => 'Sản phẩm đã được tạo thành công', 'image' => $imagePath]);
+    } else {
+        http_response_code(500);
+        echo json_encode(['message' => 'Lỗi khi lưu sản phẩm']);
+    }
+}
 
-        $result = $this->productModel->updateProduct(
-            $id,
-            $name,
-            $description,
-            $price,
-            $category_id,
-            null
-        );
+public function update($id)
+{
+    header('Content-Type: application/json');
 
-        if ($result) {
-            echo json_encode(['message' => 'Product updated successfully']);
+    if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && ($_POST['_method'] ?? '') !== 'PUT') {
+        http_response_code(405);
+        echo json_encode(['message' => 'Method Not Allowed']);
+        return;
+    }
+
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Lỗi: ID sản phẩm không hợp lệ']);
+        return;
+    }
+
+    // Nhận dữ liệu từ `$_POST`
+    $name = $_POST['name'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $price = $_POST['price'] ?? '';
+    $category_id = $_POST['category_id'] ?? null;
+
+    // Lấy thông tin sản phẩm hiện tại
+    $currentProduct = $this->productModel->getProductById($id);
+    if (!$currentProduct) {
+        http_response_code(404);
+        echo json_encode(['message' => 'Sản phẩm không tồn tại']);
+        return;
+    }
+
+    // Kiểm tra nếu có ảnh mới
+    $imagePath = $currentProduct->image; // Giữ nguyên ảnh cũ mặc định
+
+    if (!empty($_FILES['image']['name'])) {
+        $uploadDir = "uploads/";
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = time() . "_" . basename($_FILES["image"]["name"]);
+        $targetFilePath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
+            $imagePath = $targetFilePath;
+
+            // Xóa ảnh cũ nếu có
+            if (!empty($currentProduct->image) && file_exists($currentProduct->image)) {
+                unlink($currentProduct->image);
+            }
         } else {
             http_response_code(400);
-            echo json_encode(['message' => 'Product update failed']);
+            echo json_encode(['message' => 'Lỗi khi tải ảnh lên']);
+            return;
         }
     }
 
-    // Xóa sản phẩm theo ID 
-    public function destroy($id)
-    {
-        header('Content-Type: application/json');
-        $result = $this->productModel->deleteProduct($id);
+    // Cập nhật sản phẩm
+    $result = $this->productModel->updateProduct($id, $name, $description, $price, $category_id, $imagePath);
 
-        if ($result) {
-            echo json_encode(['message' => 'Product deleted successfully']);
-        } else {
-            http_response_code(400);
-            echo json_encode(['message' => 'Product deletion failed']);
-        }
+    if ($result) {
+        http_response_code(200);
+        echo json_encode(['message' => 'Sản phẩm đã được cập nhật', 'image' => $imagePath]);
+    } else {
+        http_response_code(500);
+        echo json_encode(['message' => 'Lỗi khi cập nhật sản phẩm']);
     }
+}
+
+
+public function destroy($id)
+{
+    header('Content-Type: application/json');
+
+    error_log("Delete Request for ID: " . $id); // Debug
+
+    // Kiểm tra sản phẩm có tồn tại không
+    $product = $this->productModel->getProductById($id);
+    if (!$product) {
+        http_response_code(404);
+        error_log("Product Not Found: " . $id);
+        echo json_encode(['message' => 'Sản phẩm không tồn tại']);
+        return;
+    }
+
+    // Xóa sản phẩm khỏi database
+    $result = $this->productModel->deleteProduct($id);
+    
+    if ($result) {
+        http_response_code(200); // Chắc chắn trả về 200 OK
+        error_log("Product Deleted Successfully: " . $id);
+        echo json_encode(['message' => 'Sản phẩm đã bị xóa']);
+    } else {
+        http_response_code(500); // Nếu thất bại thì trả 500
+        error_log("Failed to Delete Product: " . $id);
+        echo json_encode(['message' => 'Xóa sản phẩm thất bại']);
+    }
+}
+
 }
 ?>
