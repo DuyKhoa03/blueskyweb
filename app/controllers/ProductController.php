@@ -69,7 +69,8 @@ class ProductController
     public function edit($id)
 {
     $product = $this->callApi('GET', "{$this->apiUrl}/$id");
-    $categories = $this->callApi('GET', 'http://localhost/blueskyweb/api/category');
+    $jwtToken = $_SESSION['jwtToken'] ?? '';
+    $categories = $this->callApi('GET', 'http://localhost/blueskyweb/api/category', $jwtToken);
 
     if ($product) {
         $editId = $id; // Gán giá trị cho $editId

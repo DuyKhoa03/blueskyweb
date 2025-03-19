@@ -28,7 +28,7 @@
     <button type="submit" class="btn btn-primary">Thêm sản phẩm</button>
 </form>
 
-<a href="/blueskyweb/Product/list" class="btn btn-secondary mt-2">Quay lại danh sách sản phẩm</a>
+<a href="/blueskyweb/Product" class="btn btn-secondary mt-2">Quay lại danh sách sản phẩm</a>
 
 <?php include 'app/views/shares/footer.php'; ?>
 
