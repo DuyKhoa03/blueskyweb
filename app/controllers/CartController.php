@@ -46,7 +46,7 @@ class CartController
         // Load view giỏ hàng
         include_once 'app/views/cart/index.php';
     }
-
+    
     // Thêm sản phẩm vào giỏ hàng (gọi API từ view)
     public function add()
     {

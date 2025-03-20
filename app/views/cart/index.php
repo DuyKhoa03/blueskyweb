@@ -1,5 +1,5 @@
-<?php 
-include 'app/views/shares/header.php'; 
+<?php
+include 'app/views/shares/header.php';
 // Khởi động session nếu chưa có
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -9,7 +9,7 @@ $token = $_SESSION['jwtToken'] ?? null;
 require_once 'app/utils/JWTHandler.php'; // Để giải mã token
 $jwtHandler = new JWTHandler();
 $username = null;
-const userid = null;
+$userid = null; // Sửa lỗi cú pháp: bỏ const
 if ($token) {
     try {
         $tokenData = $jwtHandler->decode($token);
@@ -28,12 +28,34 @@ if (!$userid) {
 }
 ?>
 
-<h1>Giỏ hàng của bạn <?php echo $userid; ?></h1>
-<ul class="list-group" id="cart-list">
-    <!-- Danh sách sản phẩm trong giỏ hàng sẽ được tải từ API -->
-</ul>
-<button id="checkout-btn" class="btn btn-primary mt-3">Thanh toán</button>
-<span id="cart-total" class="ml-3">Tổng tiền: 0 VND</span>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Giỏ hàng của bạn</h1>
+</div>
+
+<!-- Bảng danh sách sản phẩm trong giỏ hàng -->
+<div id="cart-list" class="table-responsive">
+    <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+            <tr>
+                <th>Hình ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="cart-items">
+            <tr><td colspan="6" class="text-center text-muted empty-cart-message">Đang tải giỏ hàng...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Tổng tiền & Nút Thanh toán -->
+<div id="cart-summary" class="d-flex justify-content-end align-items-center mb-4">
+    <h4 id="cart-total" class="mr-3">Tổng tiền: 0 VND</h4>
+    <button id="checkout-btn" class="btn btn-primary">Thanh toán</button>
+</div>
 
 <?php include 'app/views/shares/footer.php'; ?>
 
@@ -49,7 +71,13 @@ if (!$userid) {
             return;
         }
 
-        // Lấy danh sách giỏ hàng trực tiếp bằng userId từ token
+        const cartItems = document.getElementById('cart-items');
+        const cartSummary = document.getElementById('cart-summary');
+
+        // Ẩn cart-summary ngay từ đầu
+        cartSummary.classList.remove('show');
+
+        // Lấy danh sách giỏ hàng
         fetch(`/blueskyweb/api/cart/${userId}`, {
             method: 'GET',
             headers: {
@@ -61,42 +89,76 @@ if (!$userid) {
             if (response.status === 401) {
                 alert('Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại!');
                 location.href = '/blueskyweb/account/login';
-                return;
+                return null;
+            }
+            if (!response.ok) {
+                throw new Error('Lỗi khi lấy dữ liệu giỏ hàng: ' + response.statusText);
             }
             return response.json();
         })
         .then(cart => {
-            if (!cart) return;
-            const cartList = document.getElementById('cart-list');
-            cartList.innerHTML = '';
-            let totalCartPrice = 0; // Biến để lưu tổng tiền
+            if (!cart) return; // Nếu đã chuyển hướng do lỗi 401, không xử lý tiếp
+
+            console.log('Dữ liệu giỏ hàng:', cart); // Kiểm tra dữ liệu trả về
+
+            cartItems.innerHTML = ''; // Xóa nội dung mặc định
+
+            // Kiểm tra xem cart có phải là mảng không
+            if (!Array.isArray(cart) || cart.length === 0) {
+                cartSummary.classList.remove('show'); // Ẩn tổng tiền và nút thanh toán
+                cartItems.innerHTML = '<tr><td colspan="6" class="text-center text-muted empty-cart-message">Chưa có sản phẩm nào trong giỏ hàng.</td></tr>';
+                return;
+            }
+
+            // Hiển thị tổng tiền và nút thanh toán
+            cartSummary.classList.add('show');
+            let totalCartPrice = 0;
 
             cart.forEach(item => {
-                const cartItem = document.createElement('li');
-                cartItem.className = 'list-group-item';
+                const cartItem = document.createElement('tr');
                 cartItem.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5>${item.name}</h5>
-                            <img src="${item.image}" alt="${item.name}" class="product-image mr-3">
-                            <p>Giá: ${item.price} VND</p>
-                            <p>Số lượng: <input type="number" min="1" value="${item.quantity}" onchange="updateCart(${item.id}, this.value)"></p>
-                            <p>Thành tiền: ${item.total_price} VND</p>
+                    <td><img src="${item.image}" alt="${item.name}" class="product-image"></td>
+                    <td>${item.name}</td>
+                    <td>${item.price.toLocaleString()} VND</td>
+                    <td>
+                        <div class="input-group quantity-control">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="updateCart(${item.id}, ${item.quantity - 1})">-</button>
+                            <input type="number" class="form-control text-center" min="1" value="${item.quantity}" onchange="updateCart(${item.id}, this.value)">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="updateCart(${item.id}, ${item.quantity + 1})">+</button>
                         </div>
-                        <button class="btn btn-danger" onclick="removeFromCart(${item.id})">Xóa</button>
-                    </div>
+                    </td>
+                    <td>${item.total_price.toLocaleString()} VND</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="removeFromCart(${item.id})">
+                            <i class="fas fa-trash-alt"></i> Xóa
+                        </button>
+                    </td>
                 `;
-                cartList.appendChild(cartItem);
-                totalCartPrice += parseFloat(item.total_price); // Cộng dồn tổng tiền
+                cartItems.appendChild(cartItem);
+                totalCartPrice += parseFloat(item.total_price);
             });
 
             // Hiển thị tổng tiền
             document.getElementById('cart-total').textContent = `Tổng tiền: ${totalCartPrice.toLocaleString()} VND`;
         })
-        .catch(error => console.error("Lỗi khi tải giỏ hàng:", error));
+        .catch(error => {
+            console.error("Lỗi khi tải giỏ hàng:", error);
+            cartItems.innerHTML = '<tr><td colspan="6" class="text-center text-muted empty-cart-message">Lỗi khi tải giỏ hàng. Vui lòng thử lại sau.</td></tr>';
+            cartSummary.classList.remove('show'); // Ẩn tổng tiền và nút thanh toán nếu có lỗi
+        });
+
+        // Chuyển hướng đến trang checkout khi bấm nút "Thanh toán"
+        document.getElementById('checkout-btn').addEventListener('click', function () {
+            location.href = '/blueskyweb/checkout';
+        });
     });
 
     function updateCart(cartId, quantity) {
+        if (quantity < 1) {
+            alert('Số lượng phải lớn hơn hoặc bằng 1!');
+            return;
+        }
+
         fetch(`/blueskyweb/api/cart/${cartId}`, {
             method: 'PUT',
             headers: {
@@ -116,7 +178,7 @@ if (!$userid) {
         .then(data => {
             if (data && data.message === 'Cart updated') {
                 alert('Cập nhật giỏ hàng thành công');
-                location.reload(); // Tải lại trang để cập nhật tổng tiền
+                location.reload();
             }
         })
         .catch(error => console.error("Lỗi khi cập nhật giỏ hàng:", error));
@@ -142,15 +204,10 @@ if (!$userid) {
             .then(data => {
                 if (data && data.message === 'Removed from cart') {
                     alert('Xóa sản phẩm thành công');
-                    location.reload(); // Tải lại trang để cập nhật tổng tiền
+                    location.reload();
                 }
             })
             .catch(error => console.error("Lỗi khi xóa sản phẩm:", error));
         }
     }
-
-    document.getElementById('checkout-btn').addEventListener('click', function () {
-        alert('Chức năng thanh toán đang được phát triển!');
-        // Có thể thêm logic gọi API thanh toán ở đây
-    });
 </script>

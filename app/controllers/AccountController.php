@@ -15,7 +15,20 @@ class AccountController
         $this->accountModel = new AccountModel($this->db);
         $this->jwtHandler = new JWTHandler();
     }
-
+    // Xác thực JWT
+    private function authenticate()
+    {
+        $headers = apache_request_headers();
+        if (isset($headers['Authorization'])) {
+            $authHeader = $headers['Authorization'];
+            $arr = explode(" ", $authHeader);
+            $jwt = $arr[1] ?? null;
+            if ($jwt) {
+                return $this->jwtHandler->decode($jwt);
+            }
+        }
+        return null;
+    }
     function register()
     {
         include_once 'app/views/account/register.php';
@@ -57,8 +70,13 @@ class AccountController
 
 public function updateUser()
 {
-    header('Content-Type: application/json; charset=UTF-8');
 
+    header('Content-Type: application/json; charset=UTF-8');
+    if (!$this->authenticate()) {
+        http_response_code(401);
+        echo json_encode(['message' => 'Unauthorized']);
+        return;
+    }
     $headers = getallheaders();
     if (!isset($headers['Authorization'])) {
         echo json_encode(['error' => 'Không có token, vui lòng đăng nhập!']);
@@ -66,15 +84,24 @@ public function updateUser()
         exit();
     }
 
+    // Lấy và giải mã token
     $token = str_replace('Bearer ', '', $headers['Authorization']);
     $tokenData = $this->jwtHandler->decode($token);
     $userId = $tokenData['id'];
+    $userRole = $tokenData['role']; // Lấy role của người dùng (user hoặc admin)
+
+    // Kiểm tra quyền: chỉ cho phép cập nhật thông tin của user nếu user là chính họ hoặc là admin
+    if ($userRole !== 'admin' && $userId !== $userId) {
+        http_response_code(403);
+        echo json_encode(['message' => 'Forbidden: Bạn không có quyền cập nhật thông tin của người khác.']);
+        return;
+    }
 
     $data = json_decode(file_get_contents("php://input"), true);
     $fullname = trim($data['fullname'] ?? '');
     $email = trim($data['email'] ?? '');
     $phone = trim($data['phone'] ?? '');
-
+    
     $result = $this->accountModel->updateUserById($userId, $fullname, $email, $phone);
 
     if ($result) {
@@ -170,12 +197,11 @@ public function updateUser()
         }
     }
 
-    function logout()
+    public function logout()
     {
-        unset($_SESSION['username']);
-        unset($_SESSION['role']);
-
-        header('Location: /blueskyweb/product');
+        unset($_SESSION['jwtToken']);
+        session_destroy();
+        header('Location: /blueskyweb/account/login');
         exit();
     }
 

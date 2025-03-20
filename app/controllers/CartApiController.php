@@ -49,6 +49,11 @@ class CartApiController
     // Thêm sản phẩm vào giỏ hàng
     public function store()
     {
+        if (!$this->authenticate()) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized']);
+            return;
+        }
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents("php://input"), true);
         $authUser = $this->authenticate();
@@ -76,6 +81,11 @@ class CartApiController
     // Cập nhật giỏ hàng
     public function update($cartId)
     {
+        if (!$this->authenticate()) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized']);
+            return;
+        }
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents("php://input"), true);
         $quantity = $data['quantity'] ?? 1;
@@ -93,6 +103,11 @@ class CartApiController
     // Xóa sản phẩm khỏi giỏ hàng
     public function destroy($cartId)
     {
+        if (!$this->authenticate()) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized']);
+            return;
+        }
         header('Content-Type: application/json');
         $this->cartModel->removeFromCart($cartId);
         echo json_encode(['message' => 'Removed from cart']);

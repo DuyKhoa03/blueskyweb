@@ -32,6 +32,8 @@ if ($token) {
 
     <div class="card p-4 mt-3" id="edit-form" style="display:none;">
         <h3>Cập nhật thông tin</h3>
+        <!-- Thông báo lỗi -->
+        <div id="error-message" class="alert alert-danger" style="display: none;"></div>
         <label>Họ và tên:</label>
         <input type="text" id="edit-fullname" class="form-control">
         
@@ -111,10 +113,16 @@ function updateUser() {
             alert("Cập nhật thành công!");
             location.reload();
         } else {
-            alert("Lỗi cập nhật: " + (data.error || "Không xác định"));
+            showErrorMessage(data.error || 'Lỗi cập nhật!');
         }
     })
-    .catch(error => console.error("Lỗi cập nhật:", error));
+    .catch(error => {console.error("Lỗi cập nhật:", error);showErrorMessage('Có lỗi xảy ra khi cập nhật. Vui lòng thử lại sau.');});
+    // Hàm hiển thị thông báo lỗi
+    function showErrorMessage(message) {
+    const errorMessageElement = document.getElementById("error-message");
+    errorMessageElement.innerText = message;
+    errorMessageElement.style.display = "block";  // Hiển thị thông báo lỗi
+}
 }
 </script>
 

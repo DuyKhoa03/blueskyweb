@@ -3,6 +3,7 @@ session_start();
 require_once 'app/models/ProductModel.php';
 require_once 'app/helpers/SessionHelper.php';
 require_once 'app/controllers/CartApiController.php';
+require_once 'app/controllers/CheckoutApiController.php';
 require_once 'app/controllers/ProductApiController.php';
 require_once 'app/controllers/CategoryApiController.php';
 // Start session 

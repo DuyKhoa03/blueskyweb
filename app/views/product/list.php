@@ -6,19 +6,37 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 // Lấy token từ session (nếu có)
 $token = $_SESSION['jwtToken'] ?? null;
+require_once 'app/utils/JWTHandler.php'; // Để giải mã token
+$jwtHandler = new JWTHandler();
+$username = null;
+$userid = null;
+if ($token) {
+    try {
+        $tokenData = $jwtHandler->decode($token);
+        $username = $tokenData['username'] ?? 'Không xác định';
+        $userid = $tokenData['id'] ?? null;
+    } catch (Exception $e) {
+        unset($_SESSION['jwtToken']); // Xóa token nếu không hợp lệ
+    }
+}
 ?>
 
-<h1>Danh sách sản phẩm</h1>
-<a href="/blueskyweb/Product/add" class="btn btn-success mb-2">Thêm sản phẩm mới</a>
-<ul class="list-group" id="product-list">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Danh sách sản phẩm</h1>
+    <a href="/blueskyweb/Product/add" class="btn btn-success btn-add-product">
+        <i class="fas fa-plus mr-1"></i> Thêm sản phẩm mới
+    </a>
+</div>
+<div class="row" id="product-list">
     <!-- Danh sách sản phẩm sẽ được tải từ API và hiển thị tại đây -->
-</ul>
+</div>
 
 <?php include 'app/views/shares/footer.php'; ?>
 
 <script>
     // Chèn token từ PHP vào JavaScript
     const token = <?php echo json_encode($token); ?>;
+    const userId = <?php echo json_encode($userid); ?>;
 
     document.addEventListener("DOMContentLoaded", function () {
         if (!token) {
@@ -48,19 +66,27 @@ $token = $_SESSION['jwtToken'] ?? null;
             productList.innerHTML = ''; // Xóa danh sách cũ trước khi load mới
             
             data.forEach(product => {
-                const productItem = document.createElement('li');
-                productItem.className = 'list-group-item';
+                const productItem = document.createElement('div');
+                productItem.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
                 productItem.innerHTML = ` 
-                    <div class="d-flex align-items-center">
-                        <img src="${product.image}" alt="${product.name}" class="product-image mr-3">
-                        <div>
-                            <h2><a href="/blueskyweb/Product/show/${product.id}">${product.name}</a></h2> 
-                            <p>${product.description}</p> 
-                            <p>Giá: ${product.price} VND</p> 
-                            <p>Danh mục: ${product.category_name}</p> 
-                            <a href="/blueskyweb/Product/edit/${product.id}" class="btn btn-warning">Sửa</a> 
-                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Xóa</button>
-                            <button class="btn btn-primary" onclick="addToCart(${product.id})">Thêm vào giỏ</button>
+                    <div class="card product-card shadow-sm h-100">
+                        <img src="${product.image}" alt="${product.name}" class="card-img-top product-image">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title product-name">${product.name}</h5>
+                            <p class="card-text product-description text-muted">${product.description}</p>
+                            <p class="card-text product-price text-primary font-weight-bold">Giá: ${product.price.toLocaleString()} VND</p>
+                            <p class="card-text product-category text-secondary">Danh mục: ${product.category_name}</p>
+                            <div class="mt-auto d-flex justify-content-between">
+                                <a href="/blueskyweb/Product/edit/${product.id}" class="btn btn-warning btn-sm btn-action">
+                                    <i class="fas fa-edit mr-1"></i> Sửa
+                                </a> 
+                                <button class="btn btn-danger btn-sm btn-action" onclick="deleteProduct(${product.id})">
+                                    <i class="fas fa-trash-alt mr-1"></i> Xóa
+                                </button>
+                                <button class="btn btn-primary btn-sm btn-action" onclick="addToCart(${product.id})">
+                                    <i class="fas fa-cart-plus mr-1"></i> Thêm vào giỏ
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `; 
@@ -109,7 +135,7 @@ $token = $_SESSION['jwtToken'] ?? null;
             },
             body: JSON.stringify({
                 product_id: productId,
-                quantity: 1 // Mặc định thêm 1 sản phẩm
+                quantity: 1
             })
         })
         .then(response => {
@@ -124,7 +150,7 @@ $token = $_SESSION['jwtToken'] ?? null;
             if (!data) return;
             if (data.message === 'Added to cart') {
                 alert('Đã thêm sản phẩm vào giỏ hàng!');
-                updateCartCount(); // Cập nhật số lượng giỏ hàng trong header
+                updateCartCount();
             } else {
                 alert('Thêm vào giỏ hàng thất bại: ' + (data.message || 'Lỗi không xác định'));
             }
@@ -136,7 +162,7 @@ $token = $_SESSION['jwtToken'] ?? null;
     }
 
     function updateCartCount() {
-        fetch('/blueskyweb/account/getUserById', {
+        fetch(`/blueskyweb/api/cart/${userId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -144,32 +170,12 @@ $token = $_SESSION['jwtToken'] ?? null;
             }
         })
         .then(response => response.json())
-        .then(data => {
-            if (data && data.user) {
-                const userId = data.user.id;
-                fetch(`/blueskyweb/api/cart/${userId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
-                })
-                .then(response => response.json())
-                .then(cart => {
-                    const cartCount = cart.length || 0;
-                    document.getElementById('cart-count').innerText = cartCount;
-                })
-                .catch(error => console.error("Lỗi khi cập nhật số lượng giỏ hàng:", error));
+        .then(cart => {
+            if (cart && Array.isArray(cart)) {
+                document.getElementById('cart-count').innerText = cart.length;
             }
         })
-        .catch(error => console.error("Lỗi khi lấy userId:", error));
+        .catch(error => console.error("Lỗi khi cập nhật số lượng giỏ hàng:", error));
     }
 </script>
-
-<style>
-    .product-image {
-        max-width: 100px;
-        height: auto;
-        border-radius: 5px;
-    }
-</style>
+<link rel="stylesheet" href="/blueskyweb/public/css/product.css">
