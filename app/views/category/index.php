@@ -43,16 +43,17 @@ document.addEventListener("DOMContentLoaded", function () {
             const categoryItem = document.createElement('div');
             categoryItem.className = 'col-lg-4 col-md-6 mb-4';
             categoryItem.innerHTML = `
-                <a href="/blueskyweb/Product?category=${category.id}" class="category-card">
-                    <div class="card-body">
-                        <h5 class="category-name">${category.name}</h5>
-                        <p class="category-description">${category.description}</p>
-                        <div class="view-products">
-                            <span class="view-products-link">Xem sản phẩm <i class="fas fa-arrow-right ml-1"></i></span>
-                        </div>
-                    </div>
-                </a>
-            `;
+    <a href="/blueskyweb/Product?category=${category.id}" class="category-card">
+        <div class="card-body">
+            <h5 class="category-name">${category.name}</h5>
+            <p class="category-description">${category.description}</p>
+            <div class="view-products">
+                <span class="view-products-link">Xem sản phẩm <i class="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
+    </a>
+`;
+
             categoryList.appendChild(categoryItem);
         });
     }

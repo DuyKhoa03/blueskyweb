@@ -35,16 +35,29 @@ class ProductApiController
 
     // Lấy danh sách sản phẩm
     public function index()
-    {
-        if ($this->authenticate()) {
-            header('Content-Type: application/json');
-            $products = $this->productModel->getProducts();
-            echo json_encode($products);
+{
+    if ($this->authenticate()) {
+        header('Content-Type: application/json');
+
+        $categoryId = $_GET['category'] ?? null;
+        $keyword = $_GET['keyword'] ?? null;
+
+        if ($categoryId) {
+            $products = $this->productModel->getProductsByCategory($categoryId);
+        } elseif ($keyword !== null) {
+            $products = $this->productModel->searchProducts($keyword);
         } else {
-            http_response_code(401);
-            echo json_encode(['message' => 'Unauthorized']);
+            $products = $this->productModel->getProducts();
         }
+
+        echo json_encode($products);
+    } else {
+        http_response_code(401);
+        echo json_encode(['message' => 'Unauthorized']);
     }
+}
+
+
 
     // Lấy thông tin sản phẩm theo ID
     public function show($id)
@@ -72,8 +85,8 @@ class ProductApiController
     $description = $_POST['description'] ?? '';
     $price = $_POST['price'] ?? '';
     $category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : null;
-    $imagePath = null;
-
+    $imagePath = $_POST['image'] ?? null;
+    
     // Kiểm tra danh mục có tồn tại không
     $categoryModel = new CategoryModel($this->db);
     if (!$categoryModel->getCategoryById($category_id)) {

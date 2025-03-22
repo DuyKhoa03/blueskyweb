@@ -41,7 +41,10 @@ class AdminController
     {
         include_once 'app/views/admin/products/add.php';
     }
-
+    public function importProduct()
+    {
+        include_once 'app/views/admin/products/import.php';
+    }
     public function editProduct($editId)
     {
         include_once 'app/views/admin/products/edit.php';

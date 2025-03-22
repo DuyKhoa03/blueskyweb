@@ -61,10 +61,12 @@ if ($controllerName === 'AdminController') {
     $controller = new AdminController();
 
     // Xử lý các action của admin
+// Xử lý các action của admin
 switch ($action) {
     case 'index':
         $controller->index();
         break;
+
     case 'users':
         if (isset($url[2]) && $url[2] === 'edit' && isset($url[3])) {
             $controller->editUser($url[3]);
@@ -72,15 +74,23 @@ switch ($action) {
             $controller->users();
         }
         break;
+
     case 'products':
         if (isset($url[2]) && $url[2] === 'add') {
             $controller->addProduct();
-        } elseif (isset($url[2]) && $url[2] === 'edit' && isset($url[3])) {
-            $controller->editProduct($url[3]);
+
+        } elseif (isset($url[2]) && $url[2] === 'import') {
+            // 👉 Gọi trực tiếp view import Excel (không dùng controller)
+            include 'app/views/admin/products/import.php';
+
+        } elseif (isset($url[3]) && $url[3] === 'edit' && isset($url[4])) {
+            $controller->editProduct($url[4]);
+
         } else {
             $controller->products();
         }
         break;
+
     case 'categories':
         if (isset($url[2]) && $url[2] === 'add') {
             $controller->addCategory();
@@ -90,13 +100,16 @@ switch ($action) {
             $controller->categories();
         }
         break;
+
     case 'orders':
         $controller->orders();
         break;
+
     default:
         die('Action not found');
 }
 exit();
+
 }
 // Định tuyến các yêu cầu API 
 if ($controllerName === 'ApiController' && isset($url[1])) {

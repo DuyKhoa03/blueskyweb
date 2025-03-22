@@ -19,11 +19,39 @@ class ProductModel
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
+    public function searchProducts($keyword)
+{
+    $query = "SELECT p.id, p.name, p.description, p.price, p.image, c.name as category_name 
+              FROM " . $this->table_name . " p 
+              LEFT JOIN category c ON p.category_id = c.id
+              WHERE p.name LIKE :keyword OR p.description LIKE :keyword";
+
+    $stmt = $this->conn->prepare($query);
+    $searchTerm = "%" . $keyword . "%";
+    $stmt->bindParam(':keyword', $searchTerm, PDO::PARAM_STR);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_OBJ);
+}
+public function getProductsByCategory($categoryId)
+{
+    $query = "SELECT p.id, p.name, p.description, p.price, p.image, c.name as category_name 
+              FROM " . $this->table_name . " p 
+              LEFT JOIN category c ON p.category_id = c.id
+              WHERE p.category_id = :category_id";
+
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_OBJ);
+}
 
     // Lấy thông tin sản phẩm theo ID
     public function getProductById($id)
     {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE id = :id";
+        $query = "SELECT p.id, p.name, p.description, p.price, p.image, c.name as category_name 
+                  FROM " . $this->table_name . " p 
+                  LEFT JOIN category c ON p.category_id = c.id"
+                  . " WHERE p.id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -44,9 +72,10 @@ class ProductModel
         if (!is_numeric($price) || $price < 0) {
             $errors['price'] = 'Giá sản phẩm không hợp lệ';
         }
-        if (empty($imagePath)) {
+        if ($imagePath === null) {
             $errors['image'] = 'Vui lòng tải lên hình ảnh sản phẩm';
         }
+        
         if (!empty($errors)) {
             return $errors;
         }

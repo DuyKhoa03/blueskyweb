@@ -10,10 +10,19 @@ class ProductController
 
     // Lấy danh sách sản phẩm từ API
     public function index()
-    {
-        $products = $this->callApi('GET', $this->apiUrl);
-        include 'app/views/product/list.php';
+{
+    $categoryId = $_GET['category'] ?? null;
+
+    $url = $this->apiUrl;
+    if ($categoryId) {
+        $url .= '?category=' . urlencode($categoryId);
     }
+
+    $products = $this->callApi('GET', $url);
+    include 'app/views/product/list.php';
+}
+
+
 
     // Hiển thị thông tin sản phẩm
     public function show($id)
