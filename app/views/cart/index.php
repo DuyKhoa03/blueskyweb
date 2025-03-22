@@ -177,7 +177,6 @@ if (!$userid) {
         })
         .then(data => {
             if (data && data.message === 'Cart updated') {
-                alert('Cập nhật giỏ hàng thành công');
                 location.reload();
             }
         })

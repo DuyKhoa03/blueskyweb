@@ -3,11 +3,30 @@ session_start();
 require_once 'app/models/ProductModel.php';
 require_once 'app/helpers/SessionHelper.php';
 require_once 'app/controllers/CartApiController.php';
+require_once 'app/controllers/OrderApiController.php';
+require_once 'app/controllers/UserApiController.php';
 require_once 'app/controllers/CheckoutApiController.php';
 require_once 'app/controllers/ProductApiController.php';
 require_once 'app/controllers/CategoryApiController.php';
 // Start session 
-
+// Kiểm tra token từ cookie và khôi phục session nếu cần
+$jwtHandler = new JWTHandler();
+if (!isset($_SESSION['jwtToken']) && isset($_COOKIE['jwtToken'])) {
+    $token = $_COOKIE['jwtToken'];
+    try {
+        $tokenData = $jwtHandler->decode($token);
+        if ($tokenData) {
+            // Token hợp lệ, khôi phục session
+            $_SESSION['jwtToken'] = $token;
+        } else {
+            // Token không hợp lệ, xóa cookie
+            setcookie('jwtToken', '', time() - 3600, '/');
+        }
+    } catch (Exception $e) {
+        // Token không hợp lệ hoặc hết hạn, xóa cookie
+        setcookie('jwtToken', '', time() - 3600, '/');
+    }
+}
 
 $url = $_GET['url'] ?? '';
 $url = rtrim($url, '/');
@@ -20,7 +39,65 @@ $controllerName = isset($url[0]) && $url[0] != '' ? ucfirst($url[0]) . 'Controll
 
 // Kiểm tra phần thứ hai của URL để xác định action 
 $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
+// Định tuyến cho trang admin
+if ($controllerName === 'AdminController') {
+    // Kiểm tra role của người dùng
+    $token = $_SESSION['jwtToken'] ?? $_COOKIE['jwtToken'] ?? null;
+    if ($token) {
+        $tokenData = $jwtHandler->decode($token);
+        $role = $tokenData['role'] ?? null;
+        if ($role !== 'admin') {
+            // Nếu không phải admin, chuyển hướng về trang chính
+            header('Location: /blueskyweb/Product');
+            exit();
+        }
+    } else {
+        // Nếu không có token, chuyển hướng về trang đăng nhập
+        header('Location: /blueskyweb/account/login');
+        exit();
+    }
 
+    require_once 'app/controllers/admin/AdminController.php';
+    $controller = new AdminController();
+
+    // Xử lý các action của admin
+switch ($action) {
+    case 'index':
+        $controller->index();
+        break;
+    case 'users':
+        if (isset($url[2]) && $url[2] === 'edit' && isset($url[3])) {
+            $controller->editUser($url[3]);
+        } else {
+            $controller->users();
+        }
+        break;
+    case 'products':
+        if (isset($url[2]) && $url[2] === 'add') {
+            $controller->addProduct();
+        } elseif (isset($url[2]) && $url[2] === 'edit' && isset($url[3])) {
+            $controller->editProduct($url[3]);
+        } else {
+            $controller->products();
+        }
+        break;
+    case 'categories':
+        if (isset($url[2]) && $url[2] === 'add') {
+            $controller->addCategory();
+        } elseif (isset($url[2]) && $url[2] === 'edit' && isset($url[3])) {
+            $controller->editCategory($url[3]);
+        } else {
+            $controller->categories();
+        }
+        break;
+    case 'orders':
+        $controller->orders();
+        break;
+    default:
+        die('Action not found');
+}
+exit();
+}
 // Định tuyến các yêu cầu API 
 if ($controllerName === 'ApiController' && isset($url[1])) {
     $apiControllerName = ucfirst($url[1]) . 'ApiController';

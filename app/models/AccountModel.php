@@ -8,7 +8,14 @@ class AccountModel
     {
         $this->conn = $db;
     }
-
+    // Lấy tất cả tài khoản
+    public function getAllAccounts()
+    {
+        $query = "SELECT id, username, email, fullname, phone, role FROM users";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     // Lấy tài khoản theo username
     public function getAccountByUsername($username)
     {

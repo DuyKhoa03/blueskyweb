@@ -23,9 +23,6 @@ if ($token) {
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="page-title">Danh sách sản phẩm</h1>
-    <a href="/blueskyweb/Product/add" class="btn btn-success btn-add-product">
-        <i class="fas fa-plus mr-1"></i> Thêm sản phẩm mới
-    </a>
 </div>
 <div class="row" id="product-list">
     <!-- Danh sách sản phẩm sẽ được tải từ API và hiển thị tại đây -->

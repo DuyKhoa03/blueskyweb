@@ -25,14 +25,6 @@ class ProductController
             echo "Không thấy sản phẩm.";
         }
     }
-
-    // Hiển thị form thêm sản phẩm
-    public function add()
-    {
-        $categories = $this->callApi('GET', 'http://localhost/blueskyweb/api/category');
-        include 'app/views/product/add.php';
-    }
-
     // Xử lý thêm sản phẩm mới (Gọi API)
     public function save()
     {

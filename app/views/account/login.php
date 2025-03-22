@@ -1,56 +1,51 @@
 <?php include 'app/views/shares/header.php'; ?>
 
-<section class="vh-100 gradient-custom">
-    <div class="container py-5 h-100">
-        <div class="row d-flex justify-content-center align-items-center h-100">
+<section class="gradient-custom">
+    <div class="container py-5">
+        <div class="row d-flex justify-content-center align-items-center">
             <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-                <div class="card bg-dark text-white" style="border-radius: 1rem;">
+                <div class="card shadow-lg" style="border-radius: 1rem;">
                     <div class="card-body p-5 text-center">
+                        <h2 class="page-title mb-2">Đăng nhập</h2>
+                        <p class="text-muted mb-5">Vui lòng nhập tên đăng nhập và mật khẩu của bạn!</p>
 
                         <form id="login-form">
-                            <div class="mb-md-5 mt-md-4 pb-5">
-                                <h2 class="fw-bold mb-2 text-uppercase">Login</h2>
-                                <p class="text-white-50 mb-5">Please enter your username and password!</p>
+                            <div class="form-group mb-4">
+                                <input type="text" name="username_or_email" class="form-control form-control-lg" placeholder="Tên đăng nhập hoặc Email" required />
+                            </div>
 
-                                <div class="form-outline form-white mb-4">
-                                    <input type="text" name="username_or_email" class="form-control form-control-lg" required />
-                                    <label class="form-label">Username or Email</label>
-                                </div>
+                            <div class="form-group mb-4">
+                                <input type="password" name="password" class="form-control form-control-lg" placeholder="Mật khẩu" required />
+                            </div>
 
-                                <div class="form-outline form-white mb-4">
-                                    <input type="password" name="password" class="form-control form-control-lg" required />
-                                    <label class="form-label">Password</label>
-                                </div>
+                            <p class="small mb-4">
+                                <a href="#!" class="text-primary forgot-password">Quên mật khẩu?</a>
+                            </p>
 
-                                <p class="small mb-5 pb-lg-2">
-                                    <a class="text-white-50" href="#!">Forgot password?</a>
-                                </p>
+                            <button class="btn btn-primary btn-lg px-5" type="submit">Đăng nhập</button>
 
-                                <button class="btn btn-outline-light btn-lg px-5" type="submit">Login</button>
-
-                                <div class="d-flex justify-content-center text-center mt-4 pt-1">
-                                    <a href="#!" class="text-white"><i class="fab fa-facebook-f fa-lg"></i></a>
-                                    <a href="#!" class="text-white"><i class="fab fa-twitter fa-lg mx-4 px-2"></i></a>
-                                    <a href="#!" class="text-white"><i class="fab fa-google fa-lg"></i></a>
+                            <div class="mt-4">
+                                <p class="text-muted mb-2">Đăng nhập bằng:</p>
+                                <div class="d-flex justify-content-center text-center">
+                                    <a href="#!" class="social-icon text-primary mx-2"><i class="fab fa-facebook-f fa-lg"></i></a>
+                                    <a href="#!" class="social-icon text-primary mx-2"><i class="fab fa-google fa-lg"></i></a>
                                 </div>
                             </div>
-                            <div>
-                                <p class="mb-0">Don't have an account? 
-                                    <a href="/blueskyweb/account/register" class="text-white-50 fw-bold">Sign Up</a>
+
+                            <div class="mt-4">
+                                <p class="mb-0">Bạn chưa có tài khoản? 
+                                    <a href="/blueskyweb/account/register" class="text-primary fw-bold signup-link">Đăng ký</a>
                                 </p>
                             </div>
                         </form>
 
                         <p id="login-error" class="text-danger mt-3" style="display: none;"></p>
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
-<?php include 'app/views/shares/footer.php'; ?>
 
 <script>
 document.getElementById('login-form').addEventListener('submit', function (event) {
@@ -82,3 +77,155 @@ document.getElementById('login-form').addEventListener('submit', function (event
     });
 });
 </script>
+
+<style>
+    /* Gradient nền */
+    .gradient-custom {
+        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        min-height: calc(100vh - 60px); /* Đảm bảo chiều cao tối thiểu trừ chiều cao navbar */
+        position: relative;
+        padding-bottom: 60px; /* Đảm bảo đủ không gian cho footer */
+    }
+
+    /* Tùy chỉnh card */
+    .card {
+        background-color: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    /* Tùy chỉnh tiêu đề */
+    .page-title {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    /* Tùy chỉnh form */
+    .form-group input {
+        border-radius: 5px;
+        border: 1px solid #ced4da;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    }
+
+    .form-group input::placeholder {
+        color: #adb5bd;
+    }
+
+    /* Tùy chỉnh nút đăng nhập */
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        padding: 10px 30px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Tùy chỉnh thông báo lỗi */
+    .text-danger {
+        font-size: 0.9rem;
+        padding: 10px;
+        background-color: #f8d7da;
+        border-radius: 5px;
+        margin-top: 15px;
+    }
+
+    /* Tùy chỉnh liên kết */
+    .forgot-password, .signup-link {
+        color: #007bff;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .forgot-password:hover, .signup-link:hover {
+        color: #0056b3;
+        text-decoration: underline;
+    }
+
+    /* Tùy chỉnh biểu tượng mạng xã hội */
+    .social-icon {
+        color: #007bff;
+        transition: all 0.3s ease;
+    }
+
+    .social-icon:hover {
+        color: #0056b3;
+        transform: translateY(-2px);
+    }
+
+    /* Tùy chỉnh văn bản phụ */
+    .text-muted {
+        color: #6c757d !important;
+    }
+
+    /* Đảm bảo footer nằm ở dưới cùng */
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    .main-content {
+        flex: 1 0 auto; /* Đảm bảo nội dung chính mở rộng để đẩy footer xuống */
+    }
+
+    .footer {
+        flex-shrink: 0; /* Đảm bảo footer không bị co lại */
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.8rem;
+        }
+
+        .card-body {
+            padding: 3rem !important;
+        }
+
+        .btn-primary {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+
+        .social-icon i {
+            font-size: 1.2rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .card-body {
+            padding: 2rem !important;
+        }
+
+        .form-control-lg {
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            padding: 8px 15px;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+<?php include 'app/views/shares/footer.php'; ?>

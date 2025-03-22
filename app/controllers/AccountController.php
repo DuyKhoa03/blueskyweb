@@ -201,6 +201,8 @@ public function updateUser()
     {
         unset($_SESSION['jwtToken']);
         session_destroy();
+        // Xóa cookie
+        setcookie('jwtToken', '', time() - 3600, '/'); // Đặt thời gian sống về quá khứ để xóa cookie
         header('Location: /blueskyweb/account/login');
         exit();
     }
@@ -239,7 +241,8 @@ public function updateUser()
 
         // Lưu token vào session
         $_SESSION['jwtToken'] = $token;
-
+        // Lưu token vào cookie với thời gian sống 7 ngày (604800 giây)
+        setcookie('jwtToken', $token, time() + 604800, '/', '', false, true); // httponly = true để tăng bảo mật
         // Trả về phản hồi thành công
         echo json_encode(['message' => 'Đăng nhập thành công']);
     } else {
