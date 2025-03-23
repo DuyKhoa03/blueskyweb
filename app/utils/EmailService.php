@@ -18,7 +18,7 @@ class EmailService {
         $this->mail->Host       = 'smtp.gmail.com';
         $this->mail->SMTPAuth   = true;
         $this->mail->Username   = 'ticau0000@gmail.com';        // 💡 Thay bằng Gmail của bạn
-        $this->mail->Password   = 'urbc preg vvjk aknq';          // 💡 Mật khẩu ứng dụng (App Password)
+        $this->mail->Password   = '...';          // 💡 Mật khẩu ứng dụng (App Password)
         $this->mail->SMTPSecure = 'tls';
         $this->mail->Port       = 587;
 

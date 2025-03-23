@@ -7,8 +7,8 @@ class GoogleService {
 
     public function __construct() {
         $this->client = new Google_Client();
-        $this->client->setClientId('375836455855-51amv6t3tfkuldpb3ckgm9ragg7l6pcs.apps.googleusercontent.com');
-        $this->client->setClientSecret('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');
+        $this->client->setClientId('...');
+        $this->client->setClientSecret('...');
         $this->client->setRedirectUri('http://localhost/blueskyweb/account/googleCallback');
         $this->client->addScope("email");
         $this->client->addScope("profile");
