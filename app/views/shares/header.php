@@ -227,7 +227,6 @@ if ($token) {
         });
 
         function logout() {
-            localStorage.removeItem('jwtToken');
             window.location.href = '/blueskyweb/account/logout';
         }
     </script>

@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL & ~E_WARNING & ~E_DEPRECATED);
+ini_set('display_errors', 0);
+
 session_start();
 require_once 'app/models/ProductModel.php';
 require_once 'app/helpers/SessionHelper.php';
