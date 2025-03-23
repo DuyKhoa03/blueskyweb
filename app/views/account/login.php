@@ -19,7 +19,8 @@
                             </div>
 
                             <p class="small mb-4">
-                                <a href="#!" class="text-primary forgot-password">Quên mật khẩu?</a>
+                            <a href="/blueskyweb/account/forgot" class="text-primary forgot-password">Quên mật khẩu?</a>
+
                             </p>
 
                             <button class="btn btn-primary btn-lg px-5" type="submit">Đăng nhập</button>
@@ -27,8 +28,16 @@
                             <div class="mt-4">
                                 <p class="text-muted mb-2">Đăng nhập bằng:</p>
                                 <div class="d-flex justify-content-center text-center">
-                                    <a href="#!" class="social-icon text-primary mx-2"><i class="fab fa-facebook-f fa-lg"></i></a>
-                                    <a href="#!" class="social-icon text-primary mx-2"><i class="fab fa-google fa-lg"></i></a>
+                                <a href="javascript:void(0);" onclick="alert('Chức năng đang phát triển, vui lòng quay lại sau!')" class="social-icon text-primary mx-2">
+    <i class="fab fa-facebook-f fa-lg"></i>
+</a>
+
+                                    <div class="d-flex justify-content-center text-center">
+    <a href="/blueskyweb/account/googleLogin" class="social-icon text-primary mx-2">
+        <i class="fab fa-google fa-lg"></i>
+    </a>
+</div>
+
                                 </div>
                             </div>
 

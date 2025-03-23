@@ -2,6 +2,8 @@
 require_once('app/config/database.php');
 require_once('app/models/AccountModel.php');
 require_once('app/utils/JWTHandler.php');
+require_once('app/utils/EmailService.php');
+require_once('app/utils/GoogleService.php');
 
 class AccountController
 {
@@ -29,11 +31,166 @@ class AccountController
         }
         return null;
     }
+    public function handleForgot()
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        $data = json_decode(file_get_contents("php://input"), true);
+        $email = trim($data['email'] ?? '');
+
+        if (empty($email)) {
+            echo json_encode(['status' => 'error', 'message' => 'Vui lòng nhập email!']);
+            return;
+        }
+
+        // Kiểm tra email có tồn tại không
+        $user = $this->accountModel->getAccountByEmail($email);
+        if (!$user) {
+            echo json_encode(['status' => 'error', 'message' => 'Email không tồn tại trong hệ thống!']);
+            return;
+        }
+
+        // Tạo mã xác nhận 6 chữ số
+        $code = random_int(100000, 999999);
+
+        // Lưu vào SESSION 
+        if (session_status() == PHP_SESSION_NONE)
+            session_start();
+            $_SESSION['reset_username'] = $user->username;
+        $_SESSION['reset_code'] = $code;
+        $_SESSION['reset_email'] = $email;
+        $_SESSION['reset_expires'] = time() + 300; // hết hạn sau 5 phút
+
+        // Gửi email
+        $mailer = new EmailService();
+        if ($mailer->sendResetCode($email, $code)) {
+            echo json_encode(['status' => 'success', 'message' => 'Đã gửi mã đến email!']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Gửi email thất bại!']);
+        }
+    }
+    public function verifyCode()
+{
+    header('Content-Type: application/json');
+    $data = json_decode(file_get_contents("php://input"), true);
+    $code = trim($data['code'] ?? '');
+
+    if (session_status() == PHP_SESSION_NONE) session_start();
+    $sessionCode = $_SESSION['reset_code'] ?? null;
+    $expires = $_SESSION['reset_expires'] ?? 0;
+
+    if (!$sessionCode || time() > $expires) {
+        echo json_encode(['status' => 'error', 'message' => 'Mã đã hết hạn, vui lòng thử lại.']);
+        return;
+    }
+
+    if ($code == $sessionCode) {
+        $_SESSION['verified_reset'] = true; // Đánh dấu đã xác minh
+        echo json_encode(['status' => 'success']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Mã xác nhận không đúng!']);
+    }
+}
+public function resetPasswordAction()
+{
+    header('Content-Type: application/json');
+    if (session_status() == PHP_SESSION_NONE) session_start();
+
+    if (!($_SESSION['verified_reset'] ?? false)) {
+        echo json_encode(['status' => 'error', 'message' => 'Bạn chưa xác thực mã OTP!']);
+        return;
+    }
+
+    $data = json_decode(file_get_contents("php://input"), true);
+    $password = trim($data['password'] ?? '');
+
+    if (strlen($password) < 6) {
+        echo json_encode(['status' => 'error', 'message' => 'Mật khẩu phải từ 6 ký tự trở lên!']);
+        return;
+    }
+
+    $email = $_SESSION['reset_email'] ?? '';
+    if (!$email) {
+        echo json_encode(['status' => 'error', 'message' => 'Không tìm thấy email trong session.']);
+        return;
+    }
+
+    $user = $this->accountModel->getAccountByEmail($email);
+    if (!$user) {
+        echo json_encode(['status' => 'error', 'message' => 'Tài khoản không tồn tại.']);
+        return;
+    }
+
+    // Cập nhật mật khẩu
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    $query = "UPDATE users SET password = :password WHERE email = :email";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':password', $hashedPassword);
+    $stmt->bindParam(':email', $email);
+
+    if ($stmt->execute()) {
+        // Xoá session reset
+        unset($_SESSION['reset_email'], $_SESSION['reset_code'], $_SESSION['reset_expires'], $_SESSION['verified_reset']);
+        echo json_encode(['status' => 'success']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Không thể cập nhật mật khẩu!']);
+    }
+}
+public function googleLogin() {
+    
+    $googleService = new GoogleService();
+    header('Location: ' . $googleService->getAuthUrl());
+    exit();
+}
+
+public function googleCallback() {
+    if (!isset($_GET['code'])) {
+        header('Location: /blueskyweb/account/login');
+        exit();
+    }
+
+    $googleService = new GoogleService();
+    $userData = $googleService->fetchUserData($_GET['code']);
+
+    $email = $userData->email;
+    $fullName = $userData->name;
+    $username = explode('@', $email)[0];
+
+    $user = $this->accountModel->getAccountByEmail($email);
+
+    if (!$user) {
+        $randomPassword = password_hash(bin2hex(random_bytes(6)), PASSWORD_BCRYPT);
+        $this->accountModel->save($username, $fullName, $email, '', $randomPassword, 'user');
+        $user = $this->accountModel->getAccountByEmail($email);
+    }
+
+    $token = $this->jwtHandler->encode([
+        'id' => $user->id,
+        'username' => $user->username,
+        'email' => $user->email,
+        'role' => $user->role
+    ]);
+
+    $_SESSION['jwtToken'] = $token;
+    setcookie('jwtToken', $token, time() + 604800, '/', '', false, true);
+    header('Location: /blueskyweb/Product');
+    exit();
+}
+
+    public function forgot()
+    {
+        include_once 'app/views/account/forgot.php';
+    }
+    public function verify_reset() {
+        include_once 'app/views/account/verify_reset.php';
+    }
+    
+    public function resetPassword() {
+        include_once 'app/views/account/reset_password.php';
+    }
     function register()
     {
         include_once 'app/views/account/register.php';
     }
-
     public function login()
     {
         include_once 'app/views/account/login.php';
@@ -43,75 +200,75 @@ class AccountController
         include_once 'app/views/account/profile.php';
     }
     public function getUserById()
-{
-    header('Content-Type: application/json; charset=UTF-8');
+    {
+        header('Content-Type: application/json; charset=UTF-8');
 
-    $headers = getallheaders();
-    if (!isset($headers['Authorization'])) {
-        echo json_encode(['error' => 'Không có token, vui lòng đăng nhập!']);
-        http_response_code(401);
+        $headers = getallheaders();
+        if (!isset($headers['Authorization'])) {
+            echo json_encode(['error' => 'Không có token, vui lòng đăng nhập!']);
+            http_response_code(401);
+            exit();
+        }
+
+        $token = str_replace('Bearer ', '', $headers['Authorization']);
+        $tokenData = $this->jwtHandler->decode($token);
+        $userId = $tokenData['id'];
+
+        $user = $this->accountModel->getAccountById($userId);
+
+        if ($user) {
+            echo json_encode(['status' => 'success', 'user' => $user], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(['error' => 'Không tìm thấy user']);
+            http_response_code(404);
+        }
         exit();
     }
 
-    $token = str_replace('Bearer ', '', $headers['Authorization']);
-    $tokenData = $this->jwtHandler->decode($token);
-    $userId = $tokenData['id'];
+    public function updateUser()
+    {
 
-    $user = $this->accountModel->getAccountById($userId);
+        header('Content-Type: application/json; charset=UTF-8');
+        if (!$this->authenticate()) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized']);
+            return;
+        }
+        $headers = getallheaders();
+        if (!isset($headers['Authorization'])) {
+            echo json_encode(['error' => 'Không có token, vui lòng đăng nhập!']);
+            http_response_code(401);
+            exit();
+        }
 
-    if ($user) {
-        echo json_encode(['status' => 'success', 'user' => $user], JSON_UNESCAPED_UNICODE);
-    } else {
-        echo json_encode(['error' => 'Không tìm thấy user']);
-        http_response_code(404);
-    }
-    exit();
-}
+        // Lấy và giải mã token
+        $token = str_replace('Bearer ', '', $headers['Authorization']);
+        $tokenData = $this->jwtHandler->decode($token);
+        $userId = $tokenData['id'];
+        $userRole = $tokenData['role']; // Lấy role của người dùng (user hoặc admin)
 
-public function updateUser()
-{
+        // Kiểm tra quyền: chỉ cho phép cập nhật thông tin của user nếu user là chính họ hoặc là admin
+        if ($userRole !== 'admin' && $userId !== $userId) {
+            http_response_code(403);
+            echo json_encode(['message' => 'Forbidden: Bạn không có quyền cập nhật thông tin của người khác.']);
+            return;
+        }
 
-    header('Content-Type: application/json; charset=UTF-8');
-    if (!$this->authenticate()) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Unauthorized']);
-        return;
-    }
-    $headers = getallheaders();
-    if (!isset($headers['Authorization'])) {
-        echo json_encode(['error' => 'Không có token, vui lòng đăng nhập!']);
-        http_response_code(401);
+        $data = json_decode(file_get_contents("php://input"), true);
+        $fullname = trim($data['fullname'] ?? '');
+        $email = trim($data['email'] ?? '');
+        $phone = trim($data['phone'] ?? '');
+
+        $result = $this->accountModel->updateUserById($userId, $fullname, $email, $phone);
+
+        if ($result) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['error' => 'Cập nhật thất bại']);
+            http_response_code(500);
+        }
         exit();
     }
-
-    // Lấy và giải mã token
-    $token = str_replace('Bearer ', '', $headers['Authorization']);
-    $tokenData = $this->jwtHandler->decode($token);
-    $userId = $tokenData['id'];
-    $userRole = $tokenData['role']; // Lấy role của người dùng (user hoặc admin)
-
-    // Kiểm tra quyền: chỉ cho phép cập nhật thông tin của user nếu user là chính họ hoặc là admin
-    if ($userRole !== 'admin' && $userId !== $userId) {
-        http_response_code(403);
-        echo json_encode(['message' => 'Forbidden: Bạn không có quyền cập nhật thông tin của người khác.']);
-        return;
-    }
-
-    $data = json_decode(file_get_contents("php://input"), true);
-    $fullname = trim($data['fullname'] ?? '');
-    $email = trim($data['email'] ?? '');
-    $phone = trim($data['phone'] ?? '');
-    
-    $result = $this->accountModel->updateUserById($userId, $fullname, $email, $phone);
-
-    if ($result) {
-        echo json_encode(['status' => 'success']);
-    } else {
-        echo json_encode(['error' => 'Cập nhật thất bại']);
-        http_response_code(500);
-    }
-    exit();
-}
 
 
     function save()
@@ -119,12 +276,12 @@ public function updateUser()
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $data = json_decode(file_get_contents("php://input"), true);
 
-        $username = trim($data['username'] ?? '');
-        $email = trim($data['email'] ?? '');
-        $fullName = trim($data['fullname'] ?? '');
-        $phone = trim($data['phone'] ?? '');
-        $password = $data['password'] ?? '';
-        $confirmPassword = $data['confirmpassword'] ?? '';
+            $username = trim($data['username'] ?? '');
+            $email = trim($data['email'] ?? '');
+            $fullName = trim($data['fullname'] ?? '');
+            $phone = trim($data['phone'] ?? '');
+            $password = $data['password'] ?? '';
+            $confirmPassword = $data['confirmpassword'] ?? '';
             $errors = [];
 
             // Kiểm tra username
@@ -176,7 +333,7 @@ public function updateUser()
             if ($this->accountModel->getAccountByPhone($phone)) {
                 $errors['phone'] = "Số điện thoại này đã được đăng ký!";
             }
-            
+
             if (!empty($errors)) {
                 header('Content-Type: application/json; charset=UTF-8');
                 echo json_encode(['status' => 'error', 'errors' => $errors], JSON_UNESCAPED_UNICODE);
@@ -190,8 +347,8 @@ public function updateUser()
 
                 if ($result) {
                     header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode(['message' => 'success'], JSON_UNESCAPED_UNICODE);
-    exit();
+                    echo json_encode(['message' => 'success'], JSON_UNESCAPED_UNICODE);
+                    exit();
                 }
             }
         }
@@ -208,47 +365,48 @@ public function updateUser()
     }
 
     public function checkLogin()
-{
-    header('Content-Type: application/json');
-    $data = json_decode(file_get_contents("php://input"), true);
+    {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents("php://input"), true);
+        unset($_SESSION['reset_email'], $_SESSION['reset_code'], $_SESSION['reset_username'], $_SESSION['reset_expires'], $_SESSION['verified_reset']);
 
-    $loginInput = trim($data['username_or_email'] ?? '');
-    $password = $data['password'] ?? '';
+        $loginInput = trim($data['username_or_email'] ?? '');
+        $password = $data['password'] ?? '';
 
-    if (empty($loginInput) || empty($password)) {
-        http_response_code(400);
-        echo json_encode(['message' => 'Vui lòng nhập email/username và mật khẩu']);
-        exit();
-    }
-
-    // Kiểm tra tài khoản theo email hoặc username
-    $user = filter_var($loginInput, FILTER_VALIDATE_EMAIL)
-        ? $this->accountModel->getAccountByEmail($loginInput)
-        : $this->accountModel->getAccountByUsername($loginInput);
-
-    if ($user && password_verify($password, $user->password)) {
-        $token = $this->jwtHandler->encode([
-            'id' => $user->id,
-            'username' => $user->username,
-            'email' => $user->email,
-            'role' => $user->role
-        ]);
-
-        // Khởi động session nếu chưa khởi động
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
+        if (empty($loginInput) || empty($password)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Vui lòng nhập email/username và mật khẩu']);
+            exit();
         }
 
-        // Lưu token vào session
-        $_SESSION['jwtToken'] = $token;
-        // Lưu token vào cookie với thời gian sống 7 ngày (604800 giây)
-        setcookie('jwtToken', $token, time() + 604800, '/', '', false, true); // httponly = true để tăng bảo mật
-        // Trả về phản hồi thành công
-        echo json_encode(['message' => 'Đăng nhập thành công']);
-    } else {
-        http_response_code(401);
-        echo json_encode(['message' => 'Tài khoản hoặc mật khẩu không đúng']);
+        // Kiểm tra tài khoản theo email hoặc username
+        $user = filter_var($loginInput, FILTER_VALIDATE_EMAIL)
+            ? $this->accountModel->getAccountByEmail($loginInput)
+            : $this->accountModel->getAccountByUsername($loginInput);
+
+        if ($user && password_verify($password, $user->password)) {
+            $token = $this->jwtHandler->encode([
+                'id' => $user->id,
+                'username' => $user->username,
+                'email' => $user->email,
+                'role' => $user->role
+            ]);
+
+            // Khởi động session nếu chưa khởi động
+            if (session_status() == PHP_SESSION_NONE) {
+                session_start();
+            }
+
+            // Lưu token vào session
+            $_SESSION['jwtToken'] = $token;
+            // Lưu token vào cookie với thời gian sống 7 ngày (604800 giây)
+            setcookie('jwtToken', $token, time() + 604800, '/', '', false, true); // httponly = true để tăng bảo mật
+            // Trả về phản hồi thành công
+            echo json_encode(['message' => 'Đăng nhập thành công']);
+        } else {
+            http_response_code(401);
+            echo json_encode(['message' => 'Tài khoản hoặc mật khẩu không đúng']);
+        }
     }
-}
 }
 ?>
