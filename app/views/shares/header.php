@@ -164,6 +164,9 @@ if ($token) {
                 <li class="nav-item" id="nav-user" style="<?php echo $isLoggedIn ? 'display: block;' : 'display: none;'; ?>">
                     <a class="nav-link" href="/blueskyweb/account/profile" id="user-link"><i class="fas fa-user mr-1"></i></a>
                 </li>
+                <li class="nav-item" id="nav-orders" style="<?php echo $isLoggedIn ? 'display: block;' : 'display: none;'; ?>">
+        <a class="nav-link" href="/blueskyweb/account/orders"><i class="fas fa-box mr-1"></i> Đơn hàng</a>
+    </li>
                 <li class="nav-item" id="nav-logout" style="<?php echo $isLoggedIn ? 'display: block;' : 'display: none;'; ?>">
                     <a class="nav-link btn" href="/blueskyweb/account/logout" onclick="logout()"><i class="fas fa-sign-out-alt mr-1"></i> Đăng xuất</a>
                 </li>

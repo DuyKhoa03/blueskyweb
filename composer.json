@@ -3,6 +3,7 @@
         "firebase/php-jwt": "^5.5",
         "phpoffice/phpspreadsheet": "^4.1",
         "phpmailer/phpmailer": "^6.9",
-        "google/apiclient": "^2.13"
+        "google/apiclient": "^2.13",
+        "mpdf/mpdf": "^8.2"
     }
 }

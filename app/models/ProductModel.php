@@ -48,7 +48,7 @@ public function getProductsByCategory($categoryId)
     // Lấy thông tin sản phẩm theo ID
     public function getProductById($id)
     {
-        $query = "SELECT p.id, p.name, p.description, p.price, p.image, c.name as category_name 
+        $query = "SELECT p.id, p.name, p.description, p.price, p.image, p.category_id, c.name as category_name 
                   FROM " . $this->table_name . " p 
                   LEFT JOIN category c ON p.category_id = c.id"
                   . " WHERE p.id = :id";

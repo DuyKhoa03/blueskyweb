@@ -17,22 +17,169 @@ if ($token) {
 }
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="page-title">Danh sách sản phẩm</h1>
-</div>
-<form id="searchForm" class="mb-4 d-flex" style="max-width: 400px;">
-    <input type="text" class="form-control me-2" id="searchInput" placeholder="Tìm kiếm sản phẩm...">
-    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-</form>
+<div class="container mt-5">
+    <!-- Tiêu đề và thanh tìm kiếm trên cùng hàng -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1 class="page-title text-primary mb-0">Danh sách sản phẩm</h1>
+        <form id="searchForm" class="d-flex align-items-center" style="max-width: 400px; flex: 1;">
+            <input type="text" class="form-control shadow-sm" id="searchInput" placeholder="Tìm kiếm sản phẩm..." style="border-radius: 20px 0 0 20px; border-right: none;">
+            <button type="submit" class="btn btn-primary shadow-sm" style="border-radius: 0 20px 20px 0; padding: 0.5rem 1rem;">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
 
-<div class="row" id="product-list">
-    <!-- Sản phẩm sẽ được hiển thị ở đây -->
-</div>
+    <!-- Danh sách sản phẩm -->
+    <div class="row" id="product-list">
+        <!-- Sản phẩm sẽ được hiển thị ở đây -->
+    </div>
 
-<!-- Phân trang -->
-<nav id="pagination" class="mt-4 d-flex justify-content-center"></nav>
+    <!-- Phân trang -->
+    <nav id="pagination" class="mt-4 d-flex justify-content-center"></nav>
+</div>
 
 <?php include 'app/views/shares/footer.php'; ?>
+
+<!-- Thêm CSS để cải thiện giao diện -->
+<style>
+/* Container chính */
+.container {
+    padding: 2rem 0;
+}
+
+/* Tiêu đề và thanh tìm kiếm */
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 0.5rem;
+}
+
+/* Form tìm kiếm */
+#searchForm {
+    min-width: 300px;
+}
+
+#searchForm input {
+    border: 1px solid #ced4da;
+    transition: border-color 0.3s ease;
+}
+
+#searchForm input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    outline: none;
+}
+
+#searchForm button {
+    border: 1px solid #007bff;
+    border-left: none;
+    transition: background-color 0.3s ease;
+}
+
+#searchForm button:hover {
+    background-color: #0056b3;
+}
+
+/* Card sản phẩm */
+.product-card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.product-image {
+    height: 200px;
+    width: 100%;
+    object-fit: contain; /* Đảm bảo ảnh vừa khung mà không bị cắt */
+    background-color: #f8f9fa; /* Nền sáng để ảnh nổi bật */
+    padding: 10px; /* Khoảng cách bên trong để ảnh không sát viền */
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.product-image:hover {
+    opacity: 0.9;
+}
+
+.product-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.product-name:hover {
+    color: #007bff;
+}
+
+.product-price {
+    font-size: 1rem;
+    color: #28a745;
+    margin-bottom: 0.5rem;
+}
+
+.product-category {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+/* Nút hành động */
+.btn-action {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-action i {
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Phân trang */
+.pagination .page-link {
+    border-radius: 5px;
+    margin: 0 3px;
+    color: #007bff;
+    border: 1px solid #dee2e6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+</style>
 
 <script>
 const token = <?php echo json_encode($token); ?>;
@@ -87,7 +234,7 @@ function renderProducts(page) {
     const pageItems = allProducts.slice(start, end);
 
     if (pageItems.length === 0) {
-        productList.innerHTML = '<p>Không tìm thấy sản phẩm phù hợp.</p>';
+        productList.innerHTML = '<p class="text-muted text-center w-100">Không tìm thấy sản phẩm phù hợp.</p>';
         return;
     }
 
@@ -96,22 +243,16 @@ function renderProducts(page) {
         productItem.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
         productItem.innerHTML = `
             <div class="card product-card shadow-sm h-100">
-                <img src="${product.image}" alt="${product.name}" class="card-img-top product-image">
+                <a href="/blueskyweb/Product/show/${product.id}">
+                    <img src="${product.image}" alt="${product.name}" class="card-img-top product-image">
+                </a>
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title product-name">${product.name}</h5>
-                    <p class="card-text product-price text-primary font-weight-bold">Giá: ${parseFloat(product.price).toLocaleString()} VND</p>
+                    <a href="/blueskyweb/Product/show/${product.id}" class="text-decoration-none">
+                        <h5 class="card-title product-name">${product.name}</h5>
+                    </a>
+                    <p class="card-text product-price text-success font-weight-bold">Giá: ${parseFloat(product.price).toLocaleString()} VND</p>
                     <p class="card-text product-category text-secondary">Danh mục: ${product.category_name}</p>
-                    <div class="mt-auto d-flex justify-content-between">
-                        <a href="/blueskyweb/Product/edit/${product.id}" class="btn btn-warning btn-sm btn-action">
-                            <i class="fas fa-edit mr-1"></i> Sửa
-                        </a> 
-                        <a href="/blueskyweb/Product/show/${product.id}" class="btn btn-outline-secondary btn-sm mt-2">
-    Xem chi tiết
-</a>
-
-                        <button class="btn btn-danger btn-sm btn-action" onclick="deleteProduct(${product.id})">
-                            <i class="fas fa-trash-alt mr-1"></i> Xóa
-                        </button>
+                    <div class="mt-auto d-flex justify-content-end">
                         <button class="btn btn-primary btn-sm btn-action" onclick="addToCart(${product.id})">
                             <i class="fas fa-cart-plus mr-1"></i> Thêm vào giỏ
                         </button>
@@ -135,7 +276,7 @@ function renderPagination() {
     let html = '<ul class="pagination">';
 
     if (currentPage > 1) {
-        html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Trước</a></li>`;
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage - 1})"><i class="fas fa-chevron-left"></i> Trước</a></li>`;
     }
 
     for (let i = 1; i <= totalPages; i++) {
@@ -145,7 +286,7 @@ function renderPagination() {
     }
 
     if (currentPage < totalPages) {
-        html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sau</a></li>`;
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sau <i class="fas fa-chevron-right"></i></a></li>`;
     }
 
     html += '</ul>';
@@ -155,6 +296,7 @@ function renderPagination() {
 function changePage(page) {
     currentPage = page;
     renderProducts(currentPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu trang
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -169,31 +311,9 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('searchForm').addEventListener('submit', function (e) {
         e.preventDefault();
         const keyword = document.getElementById('searchInput').value.trim();
-        loadProducts(keyword, true); // 👉 true = bỏ qua category
+        loadProducts(keyword, true); // true = bỏ qua category
     });
 });
-
-// Hàm xử lý khác giữ nguyên
-function deleteProduct(id) {
-    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-        fetch(`/blueskyweb/api/product/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message === 'Sản phẩm đã bị xóa') {
-                alert("Đã xóa sản phẩm.");
-                loadProducts(); // reload lại
-            } else {
-                alert("Xóa thất bại: " + data.message);
-            }
-        })
-        .catch(error => {
-            console.error("Lỗi khi xóa sản phẩm:", error);
-        });
-    }
-}
 
 function addToCart(productId) {
     fetch('/blueskyweb/api/cart/store', {

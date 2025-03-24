@@ -9,7 +9,8 @@ if (!isset($_SESSION['jwtToken'])) {
     header('Location: /blueskyweb/account/login');
     exit();
 }
-
+require_once 'app/models/AccountModel.php';
+require_once 'app/config/database.php';
 require_once 'app/utils/JWTHandler.php'; 
 $jwtHandler = new JWTHandler();
 
@@ -20,6 +21,9 @@ $username = null;
 try {
     $tokenData = $jwtHandler->decode($token);
     $userId = $tokenData['id'] ?? null;
+    $db = (new Database())->getConnection();
+$accountModel = new AccountModel($db);
+$userInfo = $accountModel->getAccountById($userId);
     $username = $tokenData['username'] ?? 'Không xác định';
 } catch (Exception $e) {
     unset($_SESSION['jwtToken']);
@@ -36,6 +40,14 @@ if (!$userId) {
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="page-title">Thanh toán - Xác nhận đơn hàng</h1>
+</div>
+<div class="mb-4">
+    <h5>Thông tin người dùng:</h5>
+    <ul>
+        <li><strong>Họ tên:</strong> <?= htmlspecialchars($userInfo['fullname'] ?? 'Chưa có') ?></li>
+        <li><strong>Email:</strong> <?= htmlspecialchars($userInfo['email'] ?? 'Chưa có') ?></li>
+        <li><strong>Số điện thoại:</strong> <?= htmlspecialchars($userInfo['phone'] ?? 'Chưa có') ?></li>
+    </ul>
 </div>
 
 <!-- Bảng danh sách sản phẩm trong giỏ hàng -->
@@ -65,7 +77,7 @@ if (!$userId) {
     <form id="checkout-form">
         <div class="form-group">
             <label for="address">Địa chỉ giao hàng</label>
-            <textarea id="address" name="address" class="form-control" rows="3" placeholder="Nhập địa chỉ giao hàng" required></textarea>
+            <textarea id="address" name="address" class="form-control" rows="3" required><?= htmlspecialchars($userInfo['address'] ?? '') ?></textarea>
         </div>
         <button type="submit" class="btn btn-success btn-block">Xác nhận thanh toán</button>
     </form>

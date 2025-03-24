@@ -39,6 +39,10 @@ if ($token) {
                     <strong>Tên đăng nhập:</strong> <span id="profile-username"></span>
                 </li>
                 <li class="mb-3">
+                    <i class="fas fa-id-badge mr-2 text-primary"></i>
+                    <strong>Địa chỉ:</strong> <span id="profile-address"></span>
+                </li>
+                <li class="mb-3">
                     <i class="fas fa-envelope mr-2 text-primary"></i>
                     <strong>Email:</strong> <span id="profile-email"></span>
                 </li>
@@ -63,6 +67,10 @@ if ($token) {
         <div class="form-group">
             <label for="edit-username">Tên đăng nhập:</label>
             <input type="text" id="edit-username" class="form-control" readonly>
+        </div>
+        <div class="form-group">
+            <label for="edit-address">Địa chỉ:</label>
+            <input type="text" id="edit-address" class="form-control" placeholder="Nhập địa chỉ">
         </div>
         <div class="form-group">
             <label for="edit-email">Email:</label>
@@ -98,12 +106,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (data.status === "success") {
             document.getElementById('profile-fullname').innerText = data.user.fullname || 'Chưa cập nhật';
             document.getElementById('profile-username').innerText = data.user.username || 'Chưa cập nhật';
+            document.getElementById('profile-address').innerText = data.user.address || 'Chưa cập nhật';
             document.getElementById('profile-email').innerText = data.user.email || 'Chưa cập nhật';
             document.getElementById('profile-phone').innerText = data.user.phone || 'Chưa cập nhật';
 
             // Gán dữ liệu vào form cập nhật
             document.getElementById('edit-fullname').value = data.user.fullname || '';
             document.getElementById('edit-username').value = data.user.username || '';
+            document.getElementById('edit-address').value = data.user.address || '';
             document.getElementById('edit-email').value = data.user.email || '';
             document.getElementById('edit-phone').value = data.user.phone || '';
         } else {
@@ -121,6 +131,7 @@ function updateUser() {
     const token = <?php echo json_encode($token); ?>;
     const updatedData = {
         fullname: document.getElementById('edit-fullname').value,
+        address: document.getElementById('edit-address').value,
         email: document.getElementById('edit-email').value,
         phone: document.getElementById('edit-phone').value
     };

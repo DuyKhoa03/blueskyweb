@@ -11,6 +11,7 @@ require_once 'app/controllers/UserApiController.php';
 require_once 'app/controllers/CheckoutApiController.php';
 require_once 'app/controllers/ProductApiController.php';
 require_once 'app/controllers/CategoryApiController.php';
+require_once 'app/controllers/AccountController.php';
 // Start session 
 // Kiểm tra token từ cookie và khôi phục session nếu cần
 $jwtHandler = new JWTHandler();
@@ -42,8 +43,31 @@ $controllerName = isset($url[0]) && $url[0] != '' ? ucfirst($url[0]) . 'Controll
 
 // Kiểm tra phần thứ hai của URL để xác định action 
 $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
+// --- BẮT ĐẶC BIỆT: /api/orders/user ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $url[0] === 'api' && $url[1] === 'orders' && isset($url[2]) && $url[2] === 'user') {
+    require_once 'app/controllers/OrderApiController.php';
+    $controller = new OrderApiController();
+    $controller->getOrdersByUser(); // Lấy danh sách đơn hàng theo user
+    exit;
+}
+// Huỷ đơn hàng
+if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $url[0] === 'api' && $url[1] === 'orders' && $url[2] === 'cancel' && isset($url[3])) {
+    require_once 'app/controllers/OrderApiController.php';
+    $controller = new OrderApiController();
+    $controller->cancel($url[3]);
+    exit;
+}
+if ($url[0] === 'export' && isset($url[1]) && $url[1] === 'invoice' && isset($url[2])) {
+    require_once 'app/controllers/admin/ExportController.php';
+    $controller = new ExportController();
+    $controller->invoice($url[2]);
+    exit;
+}
+
 // Định tuyến cho trang admin
 if ($controllerName === 'AdminController') {
+
+
     // Kiểm tra role của người dùng
     $token = $_SESSION['jwtToken'] ?? $_COOKIE['jwtToken'] ?? null;
     if ($token) {
@@ -63,7 +87,6 @@ if ($controllerName === 'AdminController') {
     require_once 'app/controllers/admin/AdminController.php';
     $controller = new AdminController();
 
-    // Xử lý các action của admin
 // Xử lý các action của admin
 switch ($action) {
     case 'index':
@@ -78,21 +101,17 @@ switch ($action) {
         }
         break;
 
-    case 'products':
-        if (isset($url[2]) && $url[2] === 'add') {
-            $controller->addProduct();
-
-        } elseif (isset($url[2]) && $url[2] === 'import') {
-            // 👉 Gọi trực tiếp view import Excel (không dùng controller)
-            include 'app/views/admin/products/import.php';
-
-        } elseif (isset($url[3]) && $url[3] === 'edit' && isset($url[4])) {
-            $controller->editProduct($url[4]);
-
-        } else {
-            $controller->products();
-        }
-        break;
+        case 'products':
+            if (isset($url[2]) && $url[2] === 'add') {
+                $controller->addProduct();
+            } elseif (isset($url[2]) && $url[2] === 'import') {
+                $controller->importProduct();
+            } elseif (isset($url[2]) && $url[2] === 'edit' && isset($url[3])) { // Sửa điều kiện
+                $controller->editProduct($url[3]); // $url[3] là ID
+            } else {
+                $controller->products();
+            }
+            break;
 
     case 'categories':
         if (isset($url[2]) && $url[2] === 'add') {
@@ -104,10 +123,16 @@ switch ($action) {
         }
         break;
 
-    case 'orders':
-        $controller->orders();
-        break;
-
+        case 'orders':
+            if (isset($url[2]) && $url[2] === 'detail' && isset($url[3])) {
+                // Truyền ID qua GET
+                $_GET['id'] = $url[3];
+                $controller->orders_detail();
+            } else {
+                $controller->orders();
+            }
+            break;
+        
     default:
         die('Action not found');
 }

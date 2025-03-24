@@ -83,4 +83,9 @@ class AdminController
     {
         include_once 'app/views/admin/orders/index.php';
     }
+    public function orders_detail()
+{
+    include_once 'app/views/admin/orders/detail.php';
+}
+
 }

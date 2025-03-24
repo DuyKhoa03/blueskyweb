@@ -9,6 +9,10 @@
             <input type="text" class="form-control" id="username" disabled>
         </div>
         <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" class="form-control" id="address" required>
+        </div>
+        <div class="form-group">
             <label for="email">Email</label>
             <input type="email" class="form-control" id="email" required>
         </div>
@@ -42,6 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(user => {
         if (user) {
             document.getElementById('username').value = user.username;
+            document.getElementById('address').value = user.address;
             document.getElementById('email').value = user.email;
             document.getElementById('fullname').value = user.fullname;
             document.getElementById('phone').value = user.phone;
@@ -57,6 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         const data = {
             email: document.getElementById('email').value,
+            address: document.getElementById('address').value,
             fullname: document.getElementById('fullname').value,
             phone: document.getElementById('phone').value
         };

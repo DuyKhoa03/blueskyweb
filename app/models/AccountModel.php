@@ -11,7 +11,7 @@ class AccountModel
     // Lấy tất cả tài khoản
     public function getAllAccounts()
     {
-        $query = "SELECT id, username, email, fullname, phone, role FROM users";
+        $query = "SELECT id, username, email, fullname, address, phone, role FROM users";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -37,7 +37,7 @@ class AccountModel
     }
     public function getAccountById($id)
 {
-    $query = "SELECT id, username, fullname, email, phone FROM users WHERE id = :id LIMIT 1";
+    $query = "SELECT id, username, fullname, address, email, phone FROM users WHERE id = :id LIMIT 1";
     $stmt = $this->conn->prepare($query);
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->execute();
@@ -54,11 +54,12 @@ class AccountModel
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_OBJ);
     }
-    public function updateUserById($id, $fullname, $email, $phone)
+    public function updateUserById($id, $fullname, $address, $email, $phone)
 {
-    $query = "UPDATE users SET fullname = :fullname, email = :email, phone = :phone WHERE id = :id";
+    $query = "UPDATE users SET fullname = :fullname, address = :address, email = :email, phone = :phone WHERE id = :id";
     $stmt = $this->conn->prepare($query);
     $stmt->bindParam(':fullname', $fullname, PDO::PARAM_STR);
+    $stmt->bindParam(':address', $address, PDO::PARAM_STR);
     $stmt->bindParam(':email', $email, PDO::PARAM_STR);
     $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);

@@ -28,13 +28,13 @@
                             <div class="mt-4">
                                 <p class="text-muted mb-2">Đăng nhập bằng:</p>
                                 <div class="d-flex justify-content-center text-center">
-                                <a href="javascript:void(0);" onclick="alert('Chức năng đang phát triển, vui lòng quay lại sau!')" class="social-icon text-primary mx-2">
+                                <!-- <a href="javascript:void(0);" onclick="alert('Chức năng đang phát triển, vui lòng quay lại sau!')" class="social-icon text-primary mx-2">
     <i class="fab fa-facebook-f fa-lg"></i>
-</a>
+</a> -->
 
                                     <div class="d-flex justify-content-center text-center">
     <a href="/blueskyweb/account/googleLogin" class="social-icon text-primary mx-2">
-        <i class="fab fa-google fa-lg"></i>
+        <i class="fab fa-google fa-lg" hover="Đăng nhập bằng tài khoản Google"></i>
     </a>
 </div>
 

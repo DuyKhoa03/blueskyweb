@@ -93,7 +93,7 @@ class UserApiController
 
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents("php://input"), true);
-        $result = $this->accountModel->updateUserById($id, $data['fullname'], $data['email'], $data['phone']);
+        $result = $this->accountModel->updateUserById($id, $data['fullname'], $data['address'], $data['email'], $data['phone']);
         if ($result) {
             echo json_encode(['message' => 'User updated successfully']);
         } else {

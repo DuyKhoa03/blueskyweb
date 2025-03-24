@@ -31,6 +31,7 @@ class AccountController
         }
         return null;
     }
+    
     public function handleForgot()
     {
         header('Content-Type: application/json; charset=UTF-8');
@@ -180,6 +181,14 @@ public function googleCallback() {
     {
         include_once 'app/views/account/forgot.php';
     }
+    public function orders() {
+        include_once 'app/views/order/orders.php';
+    }
+    public function order_detail()
+{
+    include_once 'app/views/order/order_detail.php';
+}
+
     public function verify_reset() {
         include_once 'app/views/account/verify_reset.php';
     }
@@ -256,10 +265,11 @@ public function googleCallback() {
 
         $data = json_decode(file_get_contents("php://input"), true);
         $fullname = trim($data['fullname'] ?? '');
+        $address = trim($data['address'] ?? '');
         $email = trim($data['email'] ?? '');
         $phone = trim($data['phone'] ?? '');
 
-        $result = $this->accountModel->updateUserById($userId, $fullname, $email, $phone);
+        $result = $this->accountModel->updateUserById($userId, $fullname, $address, $email, $phone);
 
         if ($result) {
             echo json_encode(['status' => 'success']);
