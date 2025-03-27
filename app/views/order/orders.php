@@ -29,7 +29,7 @@ if (!$isLoggedIn) {
 }
 
 // Gọi API lấy đơn hàng
-$orderApiUrl = "http://localhost/blueskyweb/api/orders/user"; // Đảm bảo đúng endpoint
+$orderApiUrl = "http://localhost/blueskyweb/api/orders/user";
 $ch = curl_init($orderApiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -38,80 +38,74 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 $response = curl_exec($ch);
 curl_close($ch);
 $orders = json_decode($response, true);
+
+$statuses = [
+    'pending' => ['label' => 'Chờ xử lý', 'color' => 'warning'],
+    'processing' => ['label' => 'Đang giao', 'color' => 'info'],
+    'completed' => ['label' => 'Hoàn tất', 'color' => 'success'],
+    'canceled' => ['label' => 'Đã huỷ', 'color' => 'danger']
+];
 ?>
 
-<div class="container mt-5">
-    <h2 class="mb-4 text-primary">📦 Danh sách đơn hàng của bạn</h2>
+<div class="container py-5">
+    <h2 class="text-center fw-bold mb-4 text-primary">Danh sách đơn hàng</h2>
 
-    <?php if (empty($orders)): ?>
-        <div class="alert alert-info">Bạn chưa có đơn hàng nào.</div>
-    <?php else: ?>
-        <!-- Tabs -->
-        <ul class="nav nav-tabs" id="orderTabs" role="tablist">
-            <?php
-            $statuses = ['pending' => '🕐 Chờ xử lý', 'processing' => '🔄 Đang giao', 'completed' => '✅ Hoàn tất', 'canceled' => '❌ Đã huỷ'];
-            $first = true;
-            foreach ($statuses as $key => $label): ?>
-                <li class="nav-item">
-                    <a class="nav-link <?= $first ? 'active' : '' ?>" id="<?= $key ?>-tab" data-toggle="tab" href="#<?= $key ?>" role="tab"><?= $label ?></a>
-                </li>
-            <?php $first = false; endforeach; ?>
-        </ul>
+    <ul class="nav nav-pills justify-content-center mb-4 gap-2" id="orderTabs" role="tablist">
+        <?php $first = true; foreach ($statuses as $key => $status): ?>
+            <li class="nav-item">
+                <button class="nav-link <?= $first ? 'active' : '' ?> bg-<?= $status['color'] ?> text-white"
+                        data-bs-toggle="pill" data-bs-target="#tab-<?= $key ?>" type="button" role="tab">
+                    <?= $status['label'] ?>
+                </button>
+            </li>
+        <?php $first = false; endforeach; ?>
+    </ul>
 
-        <!-- Tab Content -->
-        <div class="tab-content mt-3">
-            <?php
-            $first = true;
-            foreach ($statuses as $statusKey => $statusLabel):
-                $filteredOrders = array_filter($orders, fn($o) => $o['status'] === $statusKey);
-            ?>
-                <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="<?= $statusKey ?>" role="tabpanel">
-                    <?php if (empty($filteredOrders)): ?>
-                        <div class="alert alert-secondary">Không có đơn hàng nào thuộc trạng thái này.</div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="thead-light">
+    <div class="tab-content">
+        <?php $first = true; foreach ($statuses as $statusKey => $status): 
+            $filtered = array_filter($orders, fn($o) => $o['status'] === $statusKey); ?>
+
+            <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="tab-<?= $statusKey ?>">
+                <?php if (empty($filtered)): ?>
+                    <div class="alert alert-secondary text-center">Không có đơn hàng nào ở trạng thái này.</div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ngày đặt</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($filtered as $order): ?>
                                     <tr>
-                                        <th>Ngày đặt</th>
-                                        <th>Tổng tiền</th>
-                                        <th>Trạng thái</th>
-                                        <th>Thao tác</th>
+                                        <td><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
+                                        <td><?= number_format($order['total_amount'], 0, ',', '.') ?> VND</td>
+                                        <td><span class="badge bg-<?= $statuses[$order['status']]['color'] ?>"><?= $statuses[$order['status']]['label'] ?></span></td>
+                                        <td>
+                                            <a href="/blueskyweb/account/order_detail?id=<?= $order['id'] ?>" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i> Chi tiết
+                                            </a>
+                                            <?php if ($order['status'] === 'pending'): ?>
+                                                <button class="btn btn-outline-danger btn-sm cancel-order-btn" data-id="<?= $order['id'] ?>">
+                                                    <i class="fas fa-times"></i> Huỷ đơn
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($filteredOrders as $order): ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($order['created_at']) ?></td>
-                                            <td><?= number_format($order['total_amount'], 0, ',', '.') ?> VND</td>
-                                            <td>
-                                                <span class="badge badge-<?= $order['status'] === 'completed' ? 'success' : ($order['status'] === 'canceled' ? 'danger' : 'warning') ?>">
-                                                    <?= htmlspecialchars($order['status']) ?>
-                                                </span>
-                                            </td>
-                                            <td>
-    <a href="/blueskyweb/account/order_detail?id=<?= $order['id'] ?>" class="btn btn-sm btn-info">
-        <i class="fas fa-eye"></i> Xem chi tiết
-    </a>
-
-    <?php if ($order['status'] === 'pending'): ?>
-        <button class="btn btn-sm btn-danger ml-1 cancel-order-btn" data-id="<?= $order['id'] ?>">
-            <i class="fas fa-times-circle"></i> Huỷ đơn
-        </button>
-    <?php endif; ?>
-</td>
-
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php $first = false; endforeach; ?>
-        </div>
-    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php $first = false; endforeach; ?>
+    </div>
 </div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".cancel-order-btn").forEach(btn => {
@@ -144,7 +138,5 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <?php include_once 'app/views/shares/footer.php'; ?>

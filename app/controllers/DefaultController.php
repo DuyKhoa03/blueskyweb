@@ -2,7 +2,7 @@
 class DefaultController
 {
 public function index(){
-echo "HELLO HUTECH ";
+    include_once 'app/views/product/list.php';
 }
 }
 ?>

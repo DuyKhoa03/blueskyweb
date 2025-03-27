@@ -1,5 +1,5 @@
-<?php 
-include 'app/views/shares/header.php'; 
+<?php
+include 'app/views/shares/header.php';
 
 // Kiểm tra nếu chưa đăng nhập
 if (session_status() == PHP_SESSION_NONE) {
@@ -11,7 +11,7 @@ if (!isset($_SESSION['jwtToken'])) {
 }
 require_once 'app/models/AccountModel.php';
 require_once 'app/config/database.php';
-require_once 'app/utils/JWTHandler.php'; 
+require_once 'app/utils/JWTHandler.php';
 $jwtHandler = new JWTHandler();
 
 $token = $_SESSION['jwtToken'];
@@ -22,8 +22,8 @@ try {
     $tokenData = $jwtHandler->decode($token);
     $userId = $tokenData['id'] ?? null;
     $db = (new Database())->getConnection();
-$accountModel = new AccountModel($db);
-$userInfo = $accountModel->getAccountById($userId);
+    $accountModel = new AccountModel($db);
+    $userInfo = $accountModel->getAccountById($userId);
     $username = $tokenData['username'] ?? 'Không xác định';
 } catch (Exception $e) {
     unset($_SESSION['jwtToken']);
@@ -74,10 +74,11 @@ if (!$userId) {
 <!-- Form nhập thông tin -->
 <div class="card p-4">
     <h3 class="mb-3">Thông tin giao hàng</h3>
-    <form id="checkout-form">
+    <form id="checkout-form" method="POST" action="/blueskyweb/momo_payment.php">
         <div class="form-group">
             <label for="address">Địa chỉ giao hàng</label>
-            <textarea id="address" name="address" class="form-control" rows="3" required><?= htmlspecialchars($userInfo['address'] ?? '') ?></textarea>
+            <textarea id="address" name="address" class="form-control" rows="3"
+                required><?= htmlspecialchars($userInfo['address'] ?? '') ?></textarea>
         </div>
         <button type="submit" class="btn btn-success btn-block">Xác nhận thanh toán</button>
     </form>
@@ -96,62 +97,55 @@ if (!$userId) {
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token }
         })
-        .then(response => response.json())
-        .then(cart => {
-            const cartItems = document.getElementById('cart-items');
-            const cartSummary = document.getElementById('cart-summary');
-            cartItems.innerHTML = '';
+            .then(response => response.json())
+            .then(cart => {
+                const cartItems = document.getElementById('cart-items');
+                const cartSummary = document.getElementById('cart-summary');
+                cartItems.innerHTML = '';
 
-            if (cart.length === 0) {
-                cartSummary.style.display = 'none';
-                cartItems.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Giỏ hàng trống.</td></tr>';
-                return;
-            }
+                if (cart.length === 0) {
+                    cartSummary.style.display = 'none';
+                    cartItems.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Giỏ hàng trống.</td></tr>';
+                    return;
+                }
 
-            cartSummary.style.display = 'flex';
-            totalCartPrice = 0;
+                cartSummary.style.display = 'flex';
+                totalCartPrice = 0;
 
-            cart.forEach(item => {
-                totalCartPrice += parseFloat(item.total_price || 0); // Tính tổng tiền
-                const cartItem = document.createElement('tr');
-                cartItem.innerHTML = `
+                cart.forEach(item => {
+                    totalCartPrice += parseFloat(item.total_price || 0); // Tính tổng tiền
+                    const cartItem = document.createElement('tr');
+                    cartItem.innerHTML = `
                     <td><img src="${item.image}" alt="${item.name}" class="product-image"></td>
                     <td>${item.name}</td>
                     <td>${item.price.toLocaleString()} VND</td>
                     <td>${item.quantity}</td>
                     <td>${item.total_price.toLocaleString()} VND</td>
                 `;
-                cartItems.appendChild(cartItem);
-            });
+                    cartItems.appendChild(cartItem);
+                });
 
-            // Hiển thị tổng tiền
-            document.getElementById('cart-total').textContent = `Tổng tiền: ${totalCartPrice.toLocaleString()} VND`;
-        });
+                // Hiển thị tổng tiền
+                document.getElementById('cart-total').textContent = `Tổng tiền: ${totalCartPrice.toLocaleString()} VND`;
+            });
 
         // Gửi thanh toán
         document.getElementById('checkout-form').addEventListener('submit', function (e) {
             e.preventDefault();
-            const address = document.getElementById('address').value;
 
-            fetch('/blueskyweb/api/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ address, totalCartPrice })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'Checkout successful') {
-                    alert(`Thanh toán thành công! Mã đơn hàng: ${data.order_id}`);
-                    location.href = '/blueskyweb/cart'; // Quay về giỏ hàng
-                } else {
-                    alert('Lỗi thanh toán: ' + data.message);
-                }
-            })
-            .catch(error => console.error("Lỗi khi thanh toán:", error));
+            const form = this;
+
+            // Tạo input ẩn để gửi totalCartPrice
+            const hiddenTotal = document.createElement('input');
+            hiddenTotal.type = 'hidden';
+            hiddenTotal.name = 'totalCartPrice';
+            hiddenTotal.value = totalCartPrice;
+
+            form.appendChild(hiddenTotal);
+
+            form.submit(); // Gửi form đến momo_payment.php
         });
+
     });
 </script>
 
@@ -243,7 +237,8 @@ if (!$userId) {
             font-size: 2rem;
         }
 
-        .table th, .table td {
+        .table th,
+        .table td {
             font-size: 0.9rem;
         }
 
@@ -262,7 +257,9 @@ if (!$userId) {
     }
 
     @media (max-width: 576px) {
-        .table th, .table td {
+
+        .table th,
+        .table td {
             font-size: 0.8rem;
         }
 

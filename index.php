@@ -25,10 +25,12 @@ if (!isset($_SESSION['jwtToken']) && isset($_COOKIE['jwtToken'])) {
         } else {
             // Token không hợp lệ, xóa cookie
             setcookie('jwtToken', '', time() - 3600, '/');
+            $_SESSION['jwtToken'] = null;
         }
     } catch (Exception $e) {
         // Token không hợp lệ hoặc hết hạn, xóa cookie
         setcookie('jwtToken', '', time() - 3600, '/');
+        $_SESSION['jwtToken'] = null;
     }
 }
 
@@ -50,6 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $url[0] === 'api' && $url[1] === 'or
     $controller->getOrdersByUser(); // Lấy danh sách đơn hàng theo user
     exit;
 }
+// --- BẮT ĐẶC BIỆT: /api/statistics/revenue ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $url[0] === 'api' && $url[1] === 'statistics' && $url[2] === 'revenue') {
+    require_once 'app/controllers/StatisticsApiController.php';
+    $controller = new StatisticsApiController();
+    $controller->revenue();
+    exit;
+}
+
 // Huỷ đơn hàng
 if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $url[0] === 'api' && $url[1] === 'orders' && $url[2] === 'cancel' && isset($url[3])) {
     require_once 'app/controllers/OrderApiController.php';
@@ -132,7 +142,9 @@ switch ($action) {
                 $controller->orders();
             }
             break;
-        
+        case 'statistics':
+            $controller->statistics();
+            break;
     default:
         die('Action not found');
 }

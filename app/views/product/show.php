@@ -262,7 +262,7 @@ $token = $_SESSION['jwtToken'] ?? null;
             productItem.innerHTML = `
                 <div class="card related-product-card shadow-sm h-100">
                     <a href="/blueskyweb/Product/show/${product.id}">
-                        <img src="${product.image}" alt="${product.name}" class="card-img-top related-product-image">
+                        <img src="/blueskyweb/${product.image}" alt="${product.name}" class="card-img-top related-product-image">
                     </a>
                     <div class="card-body d-flex flex-column">
                         <a href="/blueskyweb/Product/show/${product.id}" class="text-decoration-none">
