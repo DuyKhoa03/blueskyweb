@@ -9,65 +9,62 @@ $accessKey = "F8BBA842ECF85";
 $secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
 $orderInfo = "Thanh toán đơn hàng tại BlueSkyWeb";
 $returnUrl = "http://localhost/blueskyweb/momo_return.php";
-$notifyUrl = "http://localhost/blueskyweb/momo_notify.php"; // Chỉ cần tồn tại là được
+$notifyUrl = "http://localhost/blueskyweb/momo_notify.php"; // chỉ cần tồn tại
 
-// Lấy dữ liệu từ form checkout gửi qua
+// Nhận dữ liệu từ form checkout
 $address = $_POST['address'] ?? '';
 $totalAmount = $_POST['totalCartPrice'] ?? 0;
+$originalOrderId = $_POST['orderId'] ?? null;
 
-// Lấy thông tin user từ JWT
+// Lấy user từ session JWT
 $jwt = $_SESSION['jwtToken'] ?? '';
 $jwtHandler = new JWTHandler();
 $userData = $jwtHandler->decode($jwt);
 $userId = $userData['id'] ?? null;
 
-if (!$userId || !$totalAmount || !$address) {
+if (!$userId || !$totalAmount || !$address || !$originalOrderId) {
     die("Thiếu thông tin thanh toán!");
 }
 
-// Tạo orderId & requestId
-$orderId = time() . "";
+// Tạo orderId mới gửi MoMo (unique)
+$momoOrderId = "ORDER_" . $originalOrderId . "_" . time();
 $requestId = time() . "";
 
-// Tạo extraData
+// Extra data (dùng để xác nhận lại sau thanh toán)
 $extraDataArr = [
-    'userId' => $userId,
-    'address' => $address,
-    'total' => $totalAmount
+    'orderId' => $originalOrderId
 ];
 $extraData = urlencode(http_build_query($extraDataArr));
 
-
-// ⚠️ Tạo raw string để ký – đúng thứ tự MoMo yêu cầu
+// Tạo chuỗi ký (raw hash)
 $rawHash = "accessKey=$accessKey"
     . "&amount=$totalAmount"
     . "&extraData=$extraData"
     . "&ipnUrl=$notifyUrl"
-    . "&orderId=$orderId"
+    . "&orderId=$momoOrderId"
     . "&orderInfo=$orderInfo"
     . "&partnerCode=$partnerCode"
     . "&redirectUrl=$returnUrl"
     . "&requestId=$requestId"
     . "&requestType=captureWallet";
 
-// Ký dữ liệu
+// Tạo chữ ký
 $signature = hash_hmac("sha256", $rawHash, $secretKey);
 
-// Dữ liệu gửi đến MoMo
+// Dữ liệu gửi tới MoMo
 $rawData = [
     'partnerCode' => $partnerCode,
     'accessKey' => $accessKey,
     'requestId' => $requestId,
     'amount' => $totalAmount,
-    'orderId' => $orderId,
+    'orderId' => $momoOrderId,
     'orderInfo' => $orderInfo,
     'redirectUrl' => $returnUrl,
     'ipnUrl' => $notifyUrl,
-    'extraData' => $extraData, // CHÍNH LÀ BẢN encode
+    'extraData' => $extraData,
     'requestType' => 'captureWallet',
     'signature' => $signature
 ];
-
 
 // Gửi request
 $data_string = json_encode($rawData);
@@ -81,7 +78,7 @@ curl_close($ch);
 
 $response = json_decode($result, true);
 
-// Redirect tới trang MoMo nếu thành công
+// Redirect nếu thành công
 if (isset($response['payUrl'])) {
     header('Location: ' . $response['payUrl']);
     exit();

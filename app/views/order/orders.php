@@ -39,8 +39,9 @@ $response = curl_exec($ch);
 curl_close($ch);
 $orders = json_decode($response, true);
 
+// Các trạng thái hiển thị cho người dùng
 $statuses = [
-    'pending' => ['label' => 'Chờ xử lý', 'color' => 'warning'],
+    'pending' => ['label' => 'Đang xử lý', 'color' => 'warning'],
     'processing' => ['label' => 'Đang giao', 'color' => 'info'],
     'completed' => ['label' => 'Hoàn tất', 'color' => 'success'],
     'canceled' => ['label' => 'Đã huỷ', 'color' => 'danger']
@@ -63,7 +64,14 @@ $statuses = [
 
     <div class="tab-content">
         <?php $first = true; foreach ($statuses as $statusKey => $status): 
-            $filtered = array_filter($orders, fn($o) => $o['status'] === $statusKey); ?>
+            $filtered = array_filter($orders, function($o) use ($statusKey) {
+                $mappedStatus = match ($o['status']) {
+                    'unpaid' => 'pending',
+                    'paid' => 'completed',
+                    default => $o['status']
+                };
+                return $mappedStatus === $statusKey;
+            }); ?>
 
             <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="tab-<?= $statusKey ?>">
                 <?php if (empty($filtered)): ?>
@@ -81,15 +89,23 @@ $statuses = [
                             </thead>
                             <tbody>
                                 <?php foreach ($filtered as $order): ?>
+                                    <?php
+                                    $displayStatus = match ($order['status']) {
+                                        'unpaid' => 'pending',
+                                        'paid' => 'completed',
+                                        default => $order['status']
+                                    };
+                                    ?>
                                     <tr>
                                         <td><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
                                         <td><?= number_format($order['total_amount'], 0, ',', '.') ?> VND</td>
-                                        <td><span class="badge bg-<?= $statuses[$order['status']]['color'] ?>"><?= $statuses[$order['status']]['label'] ?></span></td>
+                                        <td><span class="badge bg-<?= $statuses[$displayStatus]['color'] ?>">
+                                            <?= $statuses[$displayStatus]['label'] ?></span></td>
                                         <td>
                                             <a href="/blueskyweb/account/order_detail?id=<?= $order['id'] ?>" class="btn btn-outline-primary btn-sm">
                                                 <i class="fas fa-eye"></i> Chi tiết
                                             </a>
-                                            <?php if ($order['status'] === 'pending'): ?>
+                                            <?php if (in_array($order['status'], ['pending', 'unpaid'])): ?>
                                                 <button class="btn btn-outline-danger btn-sm cancel-order-btn" data-id="<?= $order['id'] ?>">
                                                     <i class="fas fa-times"></i> Huỷ đơn
                                                 </button>
@@ -117,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer <?= $token ?>"
+                    "Authorization": "Bearer <?= $token ?>",
                 }
             })
             .then(res => res.json())

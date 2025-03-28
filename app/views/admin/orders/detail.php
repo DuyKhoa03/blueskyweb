@@ -21,14 +21,26 @@ if (empty($orderDetails)) {
 }
 
 $order = $orderDetails[0];
+
+// Map trạng thái hiển thị
+$statusMap = [
+    'unpaid' => ['label' => 'Đang xử lý', 'color' => 'warning'],
+    'paid' => ['label' => 'Hoàn tất', 'color' => 'success'],
+    'pending' => ['label' => 'Đang xử lý', 'color' => 'warning'],
+    'processing' => ['label' => 'Đang giao', 'color' => 'info'],
+    'completed' => ['label' => 'Hoàn tất', 'color' => 'success'],
+    'canceled' => ['label' => 'Đã huỷ', 'color' => 'danger']
+];
+
+$displayStatus = $statusMap[$order['status']] ?? ['label' => $order['status'], 'color' => 'secondary'];
 ?>
 
 <div class="container mt-5">
     <h1 class="page-title text-center mb-4">Chi tiết đơn hàng #<?= $order['id'] ?></h1>
 
-    <!-- Thông tin người đặt và thông tin đơn hàng nằm cùng hàng -->
+    <!-- Thông tin người đặt và đơn hàng -->
     <div class="row mb-4">
-        <!-- Thông tin người đặt -->
+        <!-- Người đặt -->
         <div class="col-md-6">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -42,22 +54,17 @@ $order = $orderDetails[0];
             </div>
         </div>
 
-        <!-- Thông tin đơn hàng -->
+        <!-- Đơn hàng -->
         <div class="col-md-6">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <h5 class="card-title text-primary"><i class="fas fa-file-invoice me-2"></i>Thông tin đơn hàng</h5>
                     <ul class="list-unstyled">
-                        <li><strong>Người đặt:</strong> <?= htmlspecialchars($order['name']) ?> (<?= htmlspecialchars($order['phone']) ?>)</li>
+                        <li><strong>Người nhận:</strong> <?= htmlspecialchars($order['name']) ?> (<?= htmlspecialchars($order['phone']) ?>)</li>
                         <li><strong>Địa chỉ:</strong> <?= htmlspecialchars($order['address']) ?></li>
                         <li><strong>Ngày đặt:</strong> <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></li>
                         <li><strong>Trạng thái:</strong> 
-                            <span class="badge 
-                                <?= $order['status'] === 'pending' ? 'bg-warning text-dark' : 
-                                    ($order['status'] === 'processing' ? 'bg-info' : 
-                                    ($order['status'] === 'completed' ? 'bg-success' : 'bg-danger')) ?>">
-                                <?= htmlspecialchars($order['status']) ?>
-                            </span>
+                            <span class="badge bg-<?= $displayStatus['color'] ?>"><?= $displayStatus['label'] ?></span>
                         </li>
                     </ul>
                 </div>
@@ -65,7 +72,7 @@ $order = $orderDetails[0];
         </div>
     </div>
 
-    <!-- Sản phẩm trong đơn -->
+    <!-- Sản phẩm -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <h5 class="card-title"><i class="fas fa-box-open me-2"></i>Sản phẩm trong đơn</h5>
@@ -104,7 +111,7 @@ $order = $orderDetails[0];
         </div>
     </div>
 
-    <!-- Nút in hóa đơn -->
+    <!-- Nút in -->
     <div class="text-end">
         <a href="/blueskyweb/export/invoice/<?= $order['id'] ?>" class="btn btn-danger shadow-sm" target="_blank">
             <i class="fas fa-file-pdf me-2"></i>In hóa đơn (PDF)
@@ -113,66 +120,19 @@ $order = $orderDetails[0];
 </div>
 
 <style>
-.page-title {
-    color: #2c3e50;
-    font-weight: 700;
-}
-
-.card {
-    border: none;
-    border-radius: 10px;
-}
-
-.card-body {
-    padding: 2rem;
-}
-
-.card-title {
-    color: #34495e;
-    margin-bottom: 1.5rem;
-}
-
-.list-unstyled li {
-    margin-bottom: 0.75rem;
-    color: #495057;
-}
-
-.badge {
-    font-size: 1rem;
-    padding: 0.5em 1em;
-}
-
-.table th {
-    background-color: #f8f9fa;
-    color: #495057;
-}
-
-.table img {
-    transition: all 0.3s ease;
-}
-
-.table img:hover {
-    transform: scale(1.1);
-}
-
-.table-hover tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-.btn-danger {
-    border-radius: 5px;
-    padding: 10px 20px;
-    transition: all 0.3s ease;
-}
-
-.btn-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
-}
-
-.text-primary {
-    font-weight: 600;
-}
+.page-title { color: #2c3e50; font-weight: 700; }
+.card { border: none; border-radius: 10px; }
+.card-body { padding: 2rem; }
+.card-title { color: #34495e; margin-bottom: 1.5rem; }
+.list-unstyled li { margin-bottom: 0.75rem; color: #495057; }
+.badge { font-size: 1rem; padding: 0.5em 1em; }
+.table th { background-color: #f8f9fa; color: #495057; }
+.table img { transition: all 0.3s ease; }
+.table img:hover { transform: scale(1.1); }
+.table-hover tbody tr:hover { background-color: #f8f9fa; }
+.btn-danger { border-radius: 5px; padding: 10px 20px; transition: all 0.3s ease; }
+.btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3); }
+.text-primary { font-weight: 600; }
 </style>
 
 <?php include_once 'app/views/shares/footer.php'; ?>

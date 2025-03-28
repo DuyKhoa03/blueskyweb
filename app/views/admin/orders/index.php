@@ -48,131 +48,36 @@
 </div>
 
 <style>
-.page-title {
-    color: #2c3e50;
-    font-weight: 700;
-}
-
-.nav-tabs {
-    border-radius: 10px;
-    overflow: hidden;
-    background-color: #f8f9fa;
-    border: none;
-}
-
-.nav-tabs .nav-item {
-    flex: 1;
-    text-align: center;
-}
-
-.nav-tabs .nav-link {
-    padding: 15px 20px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    border: none;
-    color: white;
-    transition: none;
-}
-
-/* Giữ màu cho từng tab */
-.nav-tabs .status-all {
-    background-color: #007bff;
-    color: white;
-}
-.nav-tabs .status-all.active {
-    color: white;
-}
-
-.nav-tabs .status-pending {
-    background-color: #ffc107;
-    color: #212529;
-}
-.nav-tabs .status-pending.active {
-    color: #212529;
-}
-
-.nav-tabs .status-processing {
-    background-color: #17a2b8;
-    color: white;
-}
-.nav-tabs .status-processing.active {
-    color: white;
-}
-
-.nav-tabs .status-completed {
-    background-color: #28a745;
-    color: white;
-}
-.nav-tabs .status-completed.active {
-    color: white;
-}
-
-.nav-tabs .status-canceled {
-    background-color: #dc3545;
-    color: white;
-}
-.nav-tabs .status-canceled.active {
-    color: white;
-}
-
-/* Tab đang active: gạch chân chữ */
-.nav-tabs .nav-link.active {
-    text-decoration: underline;
-    font-weight: bold;
-    border: none;
-    background-color: inherit;
-}
-
-/* Bỏ hiệu ứng hover */
-.nav-tabs .nav-link:hover {
-    filter: none;
-}
-
-/* Bỏ hiệu ứng hover ở bảng */
-.table-hover tbody tr:hover {
-    background-color: inherit;
-}
-
-.card {
-    border: none;
-    border-radius: 10px;
-}
-
-.table {
-    margin-bottom: 0;
-}
-
-.table-dark {
-    background-color: #343a40;
-    color: white;
-}
-
-.form-control-sm {
-    border-radius: 5px;
-}
-
-.btn-sm {
-    border-radius: 5px;
-    padding: 5px 10px;
-    transition: none;
-}
-
-.btn-primary:hover, .btn-info:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-.status-select {
-    width: 120px;
-    display: inline-block;
-    margin-right: 5px;
-}
+/* (Style giữ nguyên như cũ – không thay đổi) */
+.page-title { color: #2c3e50; font-weight: 700; }
+.nav-tabs { border-radius: 10px; overflow: hidden; background-color: #f8f9fa; border: none; }
+.nav-tabs .nav-item { flex: 1; text-align: center; }
+.nav-tabs .nav-link { padding: 15px 20px; font-weight: 600; font-size: 1.1rem; border: none; color: white; }
+.nav-tabs .status-all { background-color: #007bff; color: white; }
+.nav-tabs .status-pending { background-color: #ffc107; color: #212529; }
+.nav-tabs .status-processing { background-color: #17a2b8; color: white; }
+.nav-tabs .status-completed { background-color: #28a745; color: white; }
+.nav-tabs .status-canceled { background-color: #dc3545; color: white; }
+.nav-tabs .nav-link.active { text-decoration: underline; font-weight: bold; }
+.table-hover tbody tr:hover { background-color: inherit; }
+.card { border: none; border-radius: 10px; }
+.table { margin-bottom: 0; }
+.table-dark { background-color: #343a40; color: white; }
+.status-select { width: 120px; display: inline-block; margin-right: 5px; }
 </style>
-
 
 <script>
 const token = <?php echo json_encode($_SESSION['jwtToken'] ?? ''); ?>;
 let currentStatus = "all";
+
+// Map trạng thái từ hệ thống backend sang status hiển thị
+function mapStatus(status) {
+    switch (status) {
+        case 'unpaid': return 'pending';
+        case 'paid': return 'completed';
+        default: return status;
+    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     if (!token) {
@@ -208,7 +113,9 @@ function loadOrders() {
         const list = document.getElementById("order-list");
         list.innerHTML = "";
 
-        const filtered = currentStatus === "all" ? data : data.filter(o => o.status === currentStatus);
+        const filtered = currentStatus === "all"
+            ? data
+            : data.filter(o => mapStatus(o.status) === currentStatus);
 
         if (filtered.length === 0) {
             list.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Không có đơn hàng nào.</td></tr>`;
@@ -221,14 +128,14 @@ function loadOrders() {
                 <td>${order.id}</td>
                 <td>${order.user_name || 'Không xác định'}</td>
                 <td>${order.address}</td>
-                <td>${order.total_amount.toLocaleString()} VND</td>
+                <td>${parseFloat(order.total_amount).toLocaleString()} VND</td>
                 <td>${new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
                 <td>
                     <select class="form-control form-control-sm status-select" data-id="${order.id}">
-                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Chờ xử lý</option>
-                        <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Đang giao</option>
-                        <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Hoàn tất</option>
-                        <option value="canceled" ${order.status === 'canceled' ? 'selected' : ''}>Đã huỷ</option>
+                        <option value="pending" ${mapStatus(order.status) === 'pending' ? 'selected' : ''}>Chờ xử lý</option>
+                        <option value="processing" ${mapStatus(order.status) === 'processing' ? 'selected' : ''}>Đang giao</option>
+                        <option value="completed" ${mapStatus(order.status) === 'completed' ? 'selected' : ''}>Hoàn tất</option>
+                        <option value="canceled" ${mapStatus(order.status) === 'canceled' ? 'selected' : ''}>Đã huỷ</option>
                     </select>
                     <button class="btn btn-sm btn-primary mt-1 update-status-btn" data-id="${order.id}">
                         <i class="fas fa-save"></i> Cập nhật

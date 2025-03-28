@@ -49,13 +49,13 @@ class StatisticsApiController
             default => '%Y-%m-%d'
         };
 
-        // Tổng doanh thu và số đơn đã hoàn tất
+        // Doanh thu theo ngày/tháng/năm
         $sql = "SELECT 
                     DATE_FORMAT(created_at, '$dateFormat') as time_key,
                     COUNT(*) as order_count,
                     SUM(total_amount) as total_revenue
                 FROM orders 
-                WHERE status = 'completed'";
+                WHERE status IN ('paid', 'completed')";
 
         $params = [];
 
@@ -81,7 +81,7 @@ class StatisticsApiController
             FROM order_details od
             JOIN product p ON od.product_id = p.id
             JOIN orders o ON o.id = od.order_id
-            WHERE o.status = 'completed'
+            WHERE o.status IN ('paid', 'completed')
             GROUP BY p.id, p.name
             ORDER BY total_revenue DESC
         ");

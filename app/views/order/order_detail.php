@@ -22,12 +22,28 @@ if (empty($orderDetails)) {
 
 // Lấy thông tin chung từ dòng đầu
 $order = $orderDetails[0];
+
+// Map status
+$statusMap = [
+    'unpaid' => ['label' => 'Đang xử lý', 'color' => 'warning'],
+    'paid' => ['label' => 'Hoàn tất', 'color' => 'success'],
+    'pending' => ['label' => 'Đang xử lý', 'color' => 'warning'],
+    'processing' => ['label' => 'Đang giao', 'color' => 'info'],
+    'completed' => ['label' => 'Hoàn tất', 'color' => 'success'],
+    'canceled' => ['label' => 'Đã huỷ', 'color' => 'danger']
+];
+
+$displayStatus = $statusMap[$order['status']] ?? ['label' => $order['status'], 'color' => 'secondary'];
 ?>
 
 <div class="container mt-4">
     <h3 class="text-primary mb-3">🧾 Chi tiết đơn hàng #<?= $order['id'] ?></h3>
-    <p><strong>Ngày đặt:</strong> <?= $order['created_at'] ?></p>
-    <p><strong>Trạng thái:</strong> <span class="badge badge-info"><?= $order['status'] ?></span></p>
+    <p><strong>Ngày đặt:</strong> <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></p>
+    <p><strong>Trạng thái:</strong> 
+        <span class="badge bg-<?= $displayStatus['color'] ?>">
+            <?= $displayStatus['label'] ?>
+        </span>
+    </p>
     <p><strong>Người nhận:</strong> <?= $order['name'] ?> (<?= $order['phone'] ?>)</p>
     <p><strong>Địa chỉ giao:</strong> <?= $order['address'] ?></p>
 
@@ -61,7 +77,7 @@ $order = $orderDetails[0];
         </table>
     </div>
 
-    <div class="text-right">
+    <div class="text-end">
         <h5><strong>Tổng cộng: <?= number_format($total, 0, ',', '.') ?> VND</strong></h5>
     </div>
 </div>

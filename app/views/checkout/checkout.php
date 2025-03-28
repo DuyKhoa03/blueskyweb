@@ -131,20 +131,51 @@ if (!$userId) {
 
         // Gửi thanh toán
         document.getElementById('checkout-form').addEventListener('submit', function (e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            const form = this;
+    const address = document.getElementById('address').value;
 
-            // Tạo input ẩn để gửi totalCartPrice
+    fetch('/blueskyweb/api/checkout/store', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            address: address,
+            totalCartPrice: totalCartPrice
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.order_id) {
+            // Tạo input hidden để gửi thêm orderId + totalCartPrice
+            const form = document.getElementById('checkout-form');
+
+            const hiddenOrderId = document.createElement('input');
+            hiddenOrderId.type = 'hidden';
+            hiddenOrderId.name = 'orderId';
+            hiddenOrderId.value = data.order_id;
+
             const hiddenTotal = document.createElement('input');
             hiddenTotal.type = 'hidden';
             hiddenTotal.name = 'totalCartPrice';
             hiddenTotal.value = totalCartPrice;
 
+            form.appendChild(hiddenOrderId);
             form.appendChild(hiddenTotal);
 
-            form.submit(); // Gửi form đến momo_payment.php
-        });
+            form.submit(); // Gửi đến momo_payment.php
+        } else {
+            alert("Không thể tạo đơn hàng. Vui lòng thử lại!");
+        }
+    })
+    .catch(error => {
+        console.error("Lỗi khi tạo đơn:", error);
+        alert("Đã xảy ra lỗi khi xử lý đơn hàng.");
+    });
+});
+
 
     });
 </script>

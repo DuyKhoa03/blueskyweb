@@ -88,6 +88,20 @@ public function getOrderDetailsById($orderId, $userId = null)
     $stmt->execute($params);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+public function createOrderWithStatus($userId, $phone, $address, $total, $status)
+{
+    $query = "INSERT INTO " . $this->orderTable . " (user_id, phone, address, created_at, total_amount, status) 
+              VALUES (:user_id, :phone, :address, NOW(), :total, :status)";
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute([
+        'user_id' => $userId,
+        'phone' => $phone,
+        'address' => $address,
+        'total' => $total,
+        'status' => $status
+    ]);
+    return $this->conn->lastInsertId();
+}
 
 }
 ?>

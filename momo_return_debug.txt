@@ -1,0 +1,18 @@
+{
+    "GET": {
+        "partnerCode": "MOMO",
+        "orderId": "ORDER_27_1743144019",
+        "requestId": "1743144019",
+        "amount": "200000",
+        "orderInfo": "Thanh to\u00e1n \u0111\u01a1n h\u00e0ng t\u1ea1i BlueSkyWeb",
+        "orderType": "momo_wallet",
+        "transId": "3297714173",
+        "resultCode": "0",
+        "message": "Successful.",
+        "payType": "qr",
+        "responseTime": "1743144038991",
+        "extraData": "orderId%3D27",
+        "signature": "08a7c7b275148cc130b4e610362791772b8a914aa973414cf07d7270326d553f"
+    },
+    "extraDataParsed": "orderId=27"
+}
