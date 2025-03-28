@@ -1,0 +1,23 @@
+# Ignore .env file
+.env
+
+# Composer vendor folder
+/vendor/
+
+# Node modules (nếu có dùng Node tool nào)
+/node_modules/
+
+# IDE/editor settings
+*.log
+*.lock
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# VS Code settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
